@@ -12,22 +12,21 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-      - name: Verify tests, drills, and negative cases
-        run: |
-          python scripts/verify.py
-          python drills/run_all.py
-          python attacks/run_regressions.py
+      - name: Verify 108 tests, 13 drills, and 15 attack regressions
+        run: python scripts/verify.py
       - uses: actions/setup-node@v6
         with:
           node-version: "24"
       - name: Verify browser JavaScript
-        run: node --check site/app.js
+        run: |
+          node --check docs/assets/lab.js
+          node --check site/app.js
       - name: Build learning bundle
         run: python scripts/build_zip.py
       - uses: actions/upload-artifact@v4
@@ -35,4 +34,3 @@ jobs:
           name: auth-lab-learning-bundle
           path: dist/auth-lab-learning-bundle.zip
           if-no-files-found: error
-

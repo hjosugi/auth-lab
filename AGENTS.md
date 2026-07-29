@@ -25,11 +25,10 @@ Run all of the following before proposing a change:
 
 ```bash
 python scripts/verify.py
-python drills/run_all.py
-python attacks/run_regressions.py
+node --check docs/assets/lab.js
 node --check site/app.js
 ```
 
-If protocol behavior changes, add a success test and at least one relevant
-negative test. Keep `docs/attack-matrix.md` and `docs/protocols.md` synchronized.
-
+`scripts/verify.py` runs 108 tests, 13 drills, and 15 attack regressions. If
+protocol behavior changes, add a success test and at least one relevant negative
+test. Keep `docs/09_attack_matrix.md` and `docs/00_index.md` synchronized.
