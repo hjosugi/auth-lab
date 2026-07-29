@@ -1,5 +1,8 @@
 # auth-lab
 
+[![CI](https://github.com/hjosugi/auth-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/hjosugi/auth-lab/actions/workflows/ci.yml)
+[![Deploy GitHub Pages](https://github.com/hjosugi/auth-lab/actions/workflows/pages.yml/badge.svg)](https://github.com/hjosugi/auth-lab/actions/workflows/pages.yml)
+
 認証・認可を「フレームワークの設定」ではなく、バイト列、署名、チケット、
 トークン、ポリシーの流れから理解する、依存パッケージなしの実行可能ラボです。
 
@@ -92,4 +95,3 @@ scripts/       一括検証とZIP生成
 ## ライセンス
 
 MIT
-
