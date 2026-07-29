@@ -1,6 +1,7 @@
 # 08 - 認可モデル: RBAC / ABAC / ReBAC
 
 > 実装: `authlab/authz/` / ドリル: `drills/08_authz_models.py`
+> 図: [RBAC/ABAC/ReBAC](diagrams.md#認可モデル-rbacabacrebac) / [リソースサーバ8ステップ(BOLA)](diagrams.md#リソースサーバの8ステップ)
 
 認証は「あなたは誰か」、認可は「あなたは〜してよいか」。別々の失敗をし、たいてい別々の人が
 書く。だからバグは2つ目に住む。表現力の弱い順に3モデル。

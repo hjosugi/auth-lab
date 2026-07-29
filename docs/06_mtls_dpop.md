@@ -1,6 +1,7 @@
 # 06 - mTLS と DPoP（送信者制約トークン）
 
 > 実装: `authlab/mtls/`, `authlab/oauth/dpop.py` / ドリル: `drills/12_mtls.py`, `drills/07_dpop.py`
+> 図: [mTLS ハンドシェイク](diagrams.md#mtls-ハンドシェイク) / [DPoP 送信者制約](diagrams.md#dpop-送信者制約-rfc-9449)
 
 Bearer トークンは「持つ者が使える」。ログ・referer・侵害プロキシから盗めば、期限まで
 その人になれる。この問題を、トークンを鍵に束縛して解く2つの方法。

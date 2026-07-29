@@ -1,6 +1,7 @@
 # 05 - WebAuthn / passkeys
 
 > 実装: `authlab/webauthn/` / ドリル: `drills/11_webauthn.py`
+> 図: [WebAuthn 登録](diagrams.md#webauthn-登録) / [WebAuthn 認証](diagrams.md#webauthn-認証)
 
 パスキーの正体。サイトごとに鍵ペアを作り、秘密鍵は認証器から出ず、署名はオリジンに
 束縛される。この1点が「パスキーはフィッシング耐性がある」の全て。

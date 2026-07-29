@@ -1,6 +1,7 @@
 # 03 - SAML 2.0
 
 > 実装: `authlab/saml/` / ドリル: `drills/09_saml.py`
+> 図: [SAML Web SSO](diagrams.md#saml-web-sso) / [XML署名ラッピング(XSW)](diagrams.md#xml-署名ラッピング-xsw)
 
 SAML はエンタープライズ SSO が15年間動いてきた基盤で、今も大企業の多くで現役。
 OAuth より古く、JSON でなく XML で、アサーション全体をブラウザ経由で運ぶ。形は OIDC と同じ。

@@ -22,6 +22,9 @@ JWT デコード、TOTP 生成、PKCE、パスワードハッシュ、ReBAC チ�
 - [07 - LDAP と SCIM](07_ldap_scim.md)
 - [08 - 認可モデル: RBAC / ABAC / ReBAC](08_authz.md)
 
+### 図で見る
+- [図集（全プロトコルのシーケンス図・構造図）](diagrams.md) — OAuth/OIDC/SAML/Kerberos/WebAuthn/DPoP/mTLS のフロー図
+
 ### リファレンス
 - [09 - 攻撃対応表（CWE / OWASP マッピング）](09_attack_matrix.md)
 - [10 - Spring Security 対応表](10_spring_security_map.md)

@@ -1,6 +1,7 @@
 # 04 - Kerberos
 
 > 実装: `authlab/kerberos/` / ドリル: `drills/10_kerberos.py`
+> 図: [Kerberos AS/TGS/AP](diagrams.md#kerberos-astgsap)
 
 このラボで最も古いプロトコル（MIT, 1980年代）で、地球上の全 Active Directory ドメインを
 今も動かしている。信頼モデルが OAuth と正反対なのが学ぶ価値: 全て対称鍵、公開鍵なし、

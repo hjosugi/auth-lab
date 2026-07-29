@@ -5,6 +5,7 @@
 のみ（`pip install` 不要）。
 
 [対話型 Playground（GitHub Pages）](https://hjosugi.github.io/auth-lab/) /
+[図集（フロー図）](docs/diagrams.md) /
 [14日学習計画](docs/11_14day_plan.md) /
 [プロトコル解説](docs/00_index.md) /
 [攻撃対応表](docs/09_attack_matrix.md) /

@@ -24,6 +24,7 @@
   <button class="tab-btn" onclick="showTab('t-pkce', this)">PKCE</button>
   <button class="tab-btn" onclick="showTab('t-passwords', this)">Passwords</button>
   <button class="tab-btn" onclick="showTab('t-authz', this)">RBAC/ABAC/ReBAC</button>
+  <button class="tab-btn" onclick="showTab('t-diagrams', this)">Diagrams</button>
   <button class="tab-btn" onclick="showTab('t-protocols', this)">SAML·Kerberos·WebAuthn…</button>
   <button class="tab-btn" onclick="showTab('t-attacks', this)">Attacks</button>
   <button class="tab-btn" onclick="showTab('t-refs', this)">References</button>
@@ -289,6 +290,119 @@ document:budget#owner@user:erin</div>
   </div>
 </section>
 
+<!-- ================= DIAGRAMS ================= -->
+<section id="t-diagrams" class="tab-panel">
+  <h2>プロトコル・フロー図</h2>
+  <p class="lead">主要プロトコルのシーケンス図。全16図は <a href="diagrams.md">docs/diagrams.md</a>（GitHub 上でレンダリング）。この場でも描画されます。</p>
+
+  <div class="card">
+    <h3>OAuth 2.1 認可コード + PKCE</h3>
+    <pre class="mermaid">sequenceDiagram
+    autonumber
+    participant U as User
+    participant C as Client
+    participant AS as Auth Server
+    participant API as Resource Server
+    U->>C: ログイン
+    Note over C: state, nonce, verifier を生成<br/>challenge = SHA-256(verifier)
+    C->>AS: /authorize (challenge のみ)
+    AS->>U: ログイン + MFA
+    Note over AS: redirect_uri 完全一致 / code を challenge に束縛
+    AS->>C: redirect ?code&state
+    Note over C: state 一致確認 (CSRF)
+    C->>AS: POST /token (code + verifier)
+    Note over AS: SHA-256(verifier)==challenge / code を used に
+    AS->>C: access + refresh + id_token
+    C->>API: Bearer access_token
+    Note over API: 署名/typ/iss/aud/exp/scope/所有権
+    API->>C: 200</pre>
+  </div>
+
+  <div class="card">
+    <h3>DPoP 送信者制約</h3>
+    <pre class="mermaid">sequenceDiagram
+    autonumber
+    participant C as Client (P-256 key)
+    participant AS as Auth Server
+    participant API as Resource Server
+    Note over C: proof = ES256 署名 {htm,htu,iat,jti,jwk}
+    C->>AS: POST /token + DPoP proof
+    AS->>C: access_token (cnf.jkt = thumbprint)
+    C->>API: DPoP token + proof (ath)
+    Note over API: thumbprint(proof.jwk)==token.cnf.jkt
+    API->>C: 200
+    C-->>API: 盗難トークンを Bearer で提示
+    API-->>C: 401 (cnf付きをBearerで=拒否)</pre>
+  </div>
+
+  <div class="card">
+    <h3>WebAuthn 認証（フィッシング耐性）</h3>
+    <pre class="mermaid">sequenceDiagram
+    autonumber
+    participant A as Authenticator
+    participant B as Browser
+    participant RP as Relying Party
+    RP->>B: challenge + rpId
+    B->>A: get (origin 付き)
+    Note over A: rp_id に鍵が無ければ署名しない<br/>= 偽サイトには何も返らない
+    A->>B: signature (authData ‖ hash(clientData))
+    B->>RP: assertion
+    Note over RP: origin完全一致 / 公開鍵で検証 / signCount単調増加
+    RP->>B: ログイン成功</pre>
+  </div>
+
+  <div class="card">
+    <h3>Kerberos AS / TGS / AP</h3>
+    <pre class="mermaid">sequenceDiagram
+    autonumber
+    participant C as Client
+    participant AS as KDC-AS
+    participant TGS as KDC-TGS
+    participant S as Service
+    Note over C: kinit (パスワードは一度だけ)
+    C->>AS: AS-REQ + PA-ENC-TIMESTAMP
+    AS->>C: TGT (krbtgt鍵) + セッションキー
+    C->>TGS: TGS-REQ (TGT + authenticator)
+    TGS->>C: サービスチケット (Svc鍵) + 新セッションキー
+    C->>S: AP-REQ (チケット + authenticator)
+    Note over S: 自分の鍵で復号 = KDC発行の証明
+    S->>C: AP-REP (相互認証)</pre>
+  </div>
+
+  <div class="card">
+    <h3>SAML Web SSO</h3>
+    <pre class="mermaid">sequenceDiagram
+    autonumber
+    participant U as User
+    participant SP as Service Provider
+    participant IdP as Identity Provider
+    U->>SP: 保護リソース
+    SP->>IdP: AuthnRequest (RelayState)
+    IdP->>U: ログイン
+    Note over IdP: Assertion に XML-DSig 署名
+    IdP->>SP: 署名付き Response (POST to ACS)
+    Note over SP: 署名/署名対象=Assertion/Issuer/Recipient<br/>InResponseTo/Conditions/Audience/replay
+    SP->>U: セッション確立</pre>
+  </div>
+
+  <div class="card">
+    <h3>リソースサーバの8ステップ（8がBOLA）</h3>
+    <pre class="mermaid">flowchart TD
+    T["Bearer / DPoP token"] --> S1["1 署名 (JWKS kid, alg固定)"]
+    S1 --> S2["2 typ = at+jwt"]
+    S2 --> S3["3 iss"]
+    S3 --> S4["4 aud が自分を含む"]
+    S4 --> S5["5 exp / nbf / iat"]
+    S5 --> S6["6 送信者制約 (DPoP/mTLS)"]
+    S6 --> S7["7 scope"]
+    S7 --> S8["8 所有権"]
+    S8 --> OK["データを返す"]
+    S8 -.->|"scopeだけで済ますと"| BOLA["BOLA / IDOR (OWASP API #1)"]</pre>
+  </div>
+
+  <div class="note" id="mermaid-status">図をレンダリング中… 表示されない場合は <a href="diagrams.md">docs/diagrams.md</a> をご覧ください（GitHub 上で確実に描画されます）。</div>
+</section>
+
 <!-- ================= PROTOCOLS ================= -->
 <section id="t-protocols" class="tab-panel">
   <h2>SAML · Kerberos · WebAuthn · mTLS · LDAP · SCIM · DPoP</h2>
@@ -437,5 +551,21 @@ document:budget#owner@user:erin</div>
 </footer>
 
 <script src="assets/lab.js"></script>
+<script type="module">
+  // Mermaid renders the Diagrams tab. Loaded from a CDN (GitHub Pages allows
+  // external scripts); if it cannot load (offline / file://), the fallback
+  // note stays and points to docs/diagrams.md, which GitHub renders natively.
+  try {
+    const theme = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "default";
+    const mod = await import("https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs");
+    mod.default.initialize({ startOnLoad: true, theme, securityLevel: "strict" });
+    await mod.default.run();
+    const status = document.getElementById("mermaid-status");
+    if (status) status.textContent = "全16図は docs/diagrams.md にあります。";
+  } catch (e) {
+    const status = document.getElementById("mermaid-status");
+    if (status) status.innerHTML = 'この環境では図ライブラリを読み込めませんでした。<a href="diagrams.md">docs/diagrams.md</a> を GitHub 上でご覧ください（確実に描画されます）。';
+  }
+</script>
 </body>
 </html>
