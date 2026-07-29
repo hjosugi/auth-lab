@@ -1,0 +1,2 @@
+"""Authentication lab test suite."""
+

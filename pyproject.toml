@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "auth-lab"
+version = "0.1.0"
+description = "Dependency-free authentication and authorization learning laboratory"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+authors = [{ name = "hjosugi" }]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Topic :: Security",
+]
+
+[project.urls]
+Repository = "https://github.com/hjosugi/auth-lab"
+Documentation = "https://hjosugi.github.io/auth-lab/"
+
+[tool.setuptools]
+packages = ["authlab"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "SIM"]
+

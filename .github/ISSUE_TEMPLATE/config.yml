@@ -1,0 +1,6 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Private security report
+    url: https://github.com/hjosugi/auth-lab/security/advisories/new
+    about: Report vulnerabilities involving real-world impact privately.
+

@@ -1,0 +1,38 @@
+name: Learning lab enhancement
+description: Propose a protocol, drill, visual, or interoperability improvement.
+title: "enhancement: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: Learning goal
+      description: What should a learner be able to explain or demonstrate?
+    validations:
+      required: true
+  - type: textarea
+    id: threat
+    attributes:
+      label: Threat model and trust boundary
+      description: Identify the asset, attacker capability, and binding or policy involved.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Include success, negative tests, documentation, and accessibility as applicable.
+      placeholder: |
+        - [ ] Success flow is executable
+        - [ ] Unsafe input is rejected
+        - [ ] Diagram and official references are updated
+    validations:
+      required: true
+  - type: checkboxes
+    id: production
+    attributes:
+      label: Production boundary
+      options:
+        - label: The proposal clearly separates teaching code from production guidance.
+          required: true
+

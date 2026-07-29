@@ -1,0 +1,46 @@
+name: Lab correctness bug
+description: Report an incorrect result, broken drill, test, or playground interaction.
+title: "bug: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: Do not include credentials, live tokens, personal data, or real targets.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Password / MFA
+        - JOSE / JWT
+        - OAuth / OIDC
+        - SAML / Kerberos
+        - WebAuthn / mTLS / DPoP
+        - LDAP / SCIM
+        - RBAC / ABAC / ReBAC
+        - GitHub Pages
+        - Documentation / CI
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Actual behavior
+      description: Include the local command and sanitized output.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected invariant
+      description: What security or protocol invariant should hold?
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Safety confirmation
+      options:
+        - label: This report targets only this educational repository and contains no live credentials.
+          required: true
+

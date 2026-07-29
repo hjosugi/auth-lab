@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Verify tests, drills, and negative cases
+        run: |
+          python scripts/verify.py
+          python drills/run_all.py
+          python attacks/run_regressions.py
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+      - name: Verify browser JavaScript
+        run: node --check site/app.js
+      - name: Build learning bundle
+        run: python scripts/build_zip.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: auth-lab-learning-bundle
+          path: dist/auth-lab-learning-bundle.zip
+          if-no-files-found: error
+
