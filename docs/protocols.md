@@ -5,7 +5,7 @@
 | プロトコル | 解説 | 実装 | ドリル |
 |-----------|------|------|--------|
 | パスワード・MFA・セッション | [01_foundations.md](01_foundations.md) | `authlab/passwords/`, `authlab/mfa/` | 01, 02 |
-| JOSE / OAuth 2.1 / OIDC | [02_jose_oauth_oidc.md](02_jose_oauth_oidc.md) | `authlab/jose/`, `authlab/oauth/` | 03–07 |
+| JOSE / OAuth 2.0 + Security BCP / OIDC | [02_jose_oauth_oidc.md](02_jose_oauth_oidc.md) | `authlab/jose/`, `authlab/oauth/` | 03–07 |
 | SAML 2.0 | [03_saml.md](03_saml.md) | `authlab/saml/` | 09 |
 | Kerberos | [04_kerberos.md](04_kerberos.md) | `authlab/kerberos/` | 10 |
 | WebAuthn / passkeys | [05_webauthn.md](05_webauthn.md) | `authlab/webauthn/` | 11 |

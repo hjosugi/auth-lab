@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>auth-lab · authentication & authorization playground</title>
-<meta name="description" content="An interactive, from-scratch lab for authentication and authorization protocols: JWT, OAuth 2.1, OIDC, SAML, Kerberos, WebAuthn, mTLS, DPoP, LDAP, SCIM, and the authorization models. Every demo runs real cryptography in your browser.">
+<meta name="description" content="An interactive, from-scratch lab for authentication and authorization protocols: JWT, OAuth 2.0 + Security BCP, OIDC, SAML, Kerberos, WebAuthn, mTLS, DPoP, LDAP, SCIM, and the authorization models. Every demo runs real cryptography in your browser.">
 <link rel="stylesheet" href="assets/lab.css">
 </head>
 <body>
@@ -44,7 +44,7 @@
       <tr><td>Credential</td><td>Prove who you are</td><td>Passwords, TOTP/HOTP, WebAuthn/passkeys, client certs (mTLS)</td></tr>
       <tr><td>Federation</td><td>Let one system vouch for you to another</td><td>OIDC, SAML, Kerberos</td></tr>
       <tr><td>Token</td><td>Carry the proof around</td><td>JWT/JOSE, JWKS, DPoP, opaque tokens + introspection</td></tr>
-      <tr><td>Delegation</td><td>Let an app act for you, scoped</td><td>OAuth 2.1 (code+PKCE, refresh, client credentials, device)</td></tr>
+      <tr><td>Delegation</td><td>Let an app act for you, scoped</td><td>OAuth 2.0 + Security BCP (code+PKCE, refresh, client credentials, device)</td></tr>
       <tr><td>Authorization</td><td>Decide if this action is allowed</td><td>RBAC, ABAC, ReBAC (Zanzibar)</td></tr>
       <tr><td>Provisioning</td><td>Create / disable accounts across systems</td><td>SCIM, LDAP</td></tr>
     </table>
@@ -154,7 +154,7 @@ python drills/run_all.py          # watch every protocol run green</div>
 
 <!-- ================= OAuth ================= -->
 <section id="t-oauth" class="tab-panel">
-  <h2>OAuth 2.1 &amp; OpenID Connect</h2>
+  <h2>OAuth 2.0 + Security BCP &amp; OpenID Connect</h2>
   <p class="lead">OAuth is <b>delegation</b> — letting an app act for you, scoped. OIDC adds <b>authentication</b> on top: the ID token tells the app who you are.</p>
 
   <div class="card demo">
@@ -296,7 +296,7 @@ document:budget#owner@user:erin</div>
   <p class="lead">主要プロトコルのシーケンス図。全16図は <a href="diagrams.md">docs/diagrams.md</a>（GitHub 上でレンダリング）。この場でも描画されます。</p>
 
   <div class="card">
-    <h3>OAuth 2.1 認可コード + PKCE</h3>
+    <h3>OAuth 2.0 + Security BCP 認可コード + PKCE</h3>
     <pre class="mermaid">sequenceDiagram
     autonumber
     participant U as User
@@ -397,7 +397,7 @@ document:budget#owner@user:erin</div>
     S6 --> S7["7 scope"]
     S7 --> S8["8 所有権"]
     S8 --> OK["データを返す"]
-    S8 -.->|"scopeだけで済ますと"| BOLA["BOLA / IDOR (OWASP API #1)"]</pre>
+    S8 -. "scope だけでは不十分" .-> BOLA["BOLA / IDOR (OWASP API #1)"]</pre>
   </div>
 
   <div class="note" id="mermaid-status">図をレンダリング中… 表示されない場合は <a href="diagrams.md">docs/diagrams.md</a> をご覧ください（GitHub 上で確実に描画されます）。</div>

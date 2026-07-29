@@ -1,4 +1,4 @@
-# 02 - JOSE / OAuth 2.1 / OIDC
+# 02 - JOSE / OAuth 2.0 + Security BCP / OIDC
 
 > 実装: `authlab/jose/`, `authlab/oauth/`, `authlab/oidc/` / ドリル: `drills/03_jwt.py`〜`drills/07_dpop.py`
 > 図: [JWT構造](diagrams.md#jwt-の構造) / [認可コード+PKCE](diagrams.md#oauth-21-認可コード--pkce) / [リフレッシュ再利用検知](diagrams.md#リフレッシュトークン-ローテーション--再利用検知) / [ID vs アクセストークン](diagrams.md#oidc-id-トークン-vs-アクセストークン) / [DPoP](diagrams.md#dpop-送信者制約-rfc-9449) / [リソースサーバ8ステップ](diagrams.md#リソースサーバの8ステップ)
@@ -53,7 +53,7 @@ BASE64URL(header) . BASE64URL(payload) . BASE64URL(signature)
 旧鍵を削除」。RS は unknown kid で1回だけ再取得（レート制限付き、さもないと
 ランダム kid で IdP を叩く DoS になる）。`authlab/jose/jwks.py`。
 
-## OAuth 2.1
+## OAuth 2.0 + Security BCP
 
 ### 実装したグラント
 
@@ -64,7 +64,7 @@ BASE64URL(header) . BASE64URL(payload) . BASE64URL(signature)
 | device_code | TV/CLI | 入力制約デバイスに正しい |
 | refresh_token | 再ログイン無しの更新 | ローテーション+再利用検知付き |
 
-### 廃止したグラント（OAuth 2.1 で削除）
+### 廃止対象のグラント（Security BCP / OAuth 2.1 draft）
 
 - **implicit** (`response_type=token`): アクセストークンを URL フラグメントで返す →
   ブラウザ履歴・referer・ページ上の全スクリプトに漏れる。→ code+PKCE に置換。

@@ -14,7 +14,7 @@ JWT デコード、TOTP 生成、PKCE、パスワードハッシュ、ReBAC チ�
 
 ### プロトコル解説（日本語）
 - [01 - 土台: パスワード・MFA・セッション](01_foundations.md)
-- [02 - JOSE / OAuth 2.1 / OIDC](02_jose_oauth_oidc.md)
+- [02 - JOSE / OAuth 2.0 + Security BCP / OIDC](02_jose_oauth_oidc.md)
 - [03 - SAML 2.0](03_saml.md)
 - [04 - Kerberos](04_kerberos.md)
 - [05 - WebAuthn / passkeys](05_webauthn.md)

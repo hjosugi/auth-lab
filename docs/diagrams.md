@@ -5,7 +5,7 @@
 
 - [全体像](#全体像)
 - [JWT の構造](#jwt-の構造)
-- [OAuth 2.1 認可コード + PKCE](#oauth-21-認可コード--pkce)
+- [OAuth 2.0 Security BCP: 認可コード + PKCE](#oauth-20-security-bcp-認可コード--pkce)
 - [リフレッシュトークン ローテーション + 再利用検知](#リフレッシュトークン-ローテーション--再利用検知)
 - [OIDC: ID トークン vs アクセストークン](#oidc-id-トークン-vs-アクセストークン)
 - [デバイスフロー](#デバイスフロー-rfc-8628)
@@ -59,7 +59,7 @@ flowchart LR
 
 ---
 
-## OAuth 2.1 認可コード + PKCE
+## OAuth 2.0 Security BCP: 認可コード + PKCE
 
 一番の山場。verifier はクライアントに留まり、challenge（そのSHA-256）だけがブラウザを通る。
 
