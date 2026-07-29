@@ -4,6 +4,28 @@
 同じ受け入れ条件を保持します。基礎ラボの完成条件ではなく、実製品との相互運用を
 深める次段階です。
 
+## Live Issue index
+
+2026-07-29時点のGitHub Issuesを、学習トラッカーと実装backlogに分けて記録します。
+詳細と最新状態は各Issueを正とします。
+
+| Issue | 状態 | 種別 | 内容 |
+|---:|---|---|---|
+| [#2](https://github.com/hjosugi/auth-lab/issues/2) | Open | 学習 | Week 1: 土台とトークン（Day 1–7） |
+| [#3](https://github.com/hjosugi/auth-lab/issues/3) | Open | 学習 | Week 2: エンタープライズと高度なトークン（Day 8–14） |
+| [#4](https://github.com/hjosugi/auth-lab/issues/4) | Closed | CI | Actionsで全検証を実行、badgeを追加 |
+| [#5](https://github.com/hjosugi/auth-lab/issues/5) | Open | SAML | exc-c14nと実IdP相互運用 |
+| [#6](https://github.com/hjosugi/auth-lab/issues/6) | Open | Interop | OAuth/LDAP/Kerberos/SAML container lab |
+| [#7](https://github.com/hjosugi/auth-lab/issues/7) | Open | Pages | Pyodideで実Pythonモジュールを実行 |
+| [#8](https://github.com/hjosugi/auth-lab/issues/8) | Open | OAuth | PAR/JAR/JARM/RAR/CIBA/FAPI 2.0 |
+| [#9](https://github.com/hjosugi/auth-lab/issues/9) | Open | WebAuthn | 実ブラウザpasskey E2E |
+| [#10](https://github.com/hjosugi/auth-lab/issues/10) | Open | Authz | Cedar/Rego/RBAC/ABAC/ReBAC比較 |
+| [#11](https://github.com/hjosugi/auth-lab/issues/11) | Open | Crypto | Ed25519とES256のJOSE/WebAuthn対応 |
+| [#12](https://github.com/hjosugi/auth-lab/issues/12) | Open | Testing | property/fuzz/conformance test |
+| [#13](https://github.com/hjosugi/auth-lab/issues/13) | Open | Spring | Java 21 Spring Security companion |
+| [#14](https://github.com/hjosugi/auth-lab/issues/14) | Open | Pages | 二言語interactive sequence |
+| [#15](https://github.com/hjosugi/auth-lab/issues/15) | Open | Password | Argon2idと定数時間注記 |
+
 ## 1. Containerized interoperability lab
 
 **Goal:** KeycloakまたはSpring Authorization Server、OpenLDAP、MIT Kerberos、
@@ -82,4 +104,3 @@ SAML IdPを起動し、教材実装の概念を実製品のwire flowへ対応付
 - 各stepでasset、trust boundary、bindingを表示する。
 - keyboard操作、reduced motion、contrastを検証する。
 - narrationは日本語/英語で意味が一致する。
-

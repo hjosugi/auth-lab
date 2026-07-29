@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>auth-lab · authentication & authorization playground</title>
+<meta name="description" content="An interactive, from-scratch lab for authentication and authorization protocols: JWT, OAuth 2.1, OIDC, SAML, Kerberos, WebAuthn, mTLS, DPoP, LDAP, SCIM, and the authorization models. Every demo runs real cryptography in your browser.">
+<link rel="stylesheet" href="assets/lab.css">
+</head>
+<body>
+
+<header class="hero">
+  <h1>🔐 auth-lab</h1>
+  <p>A from-scratch lab for authentication &amp; authorization. Every protocol below is implemented in pure Python (no dependencies) and, on this page, demonstrated with <b>real cryptography running in your browser</b> via the Web Crypto API.</p>
+  <p style="font-size:13px">認証・認可を「動かして」覚えるためのラボ。下のデモはすべてブラウザ内で本物の暗号処理を実行します。</p>
+  <div class="badge" id="crypto-badge">Web Crypto: checking…</div>
+</header>
+
+<nav class="tabs">
+  <button class="tab-btn active" onclick="showTab('t-start', this)">Start here</button>
+  <button class="tab-btn" onclick="showTab('t-jwt', this)">JWT</button>
+  <button class="tab-btn" onclick="showTab('t-totp', this)">TOTP / MFA</button>
+  <button class="tab-btn" onclick="showTab('t-oauth', this)">OAuth / OIDC</button>
+  <button class="tab-btn" onclick="showTab('t-pkce', this)">PKCE</button>
+  <button class="tab-btn" onclick="showTab('t-passwords', this)">Passwords</button>
+  <button class="tab-btn" onclick="showTab('t-authz', this)">RBAC/ABAC/ReBAC</button>
+  <button class="tab-btn" onclick="showTab('t-diagrams', this)">Diagrams</button>
+  <button class="tab-btn" onclick="showTab('t-protocols', this)">SAML·Kerberos·WebAuthn…</button>
+  <button class="tab-btn" onclick="showTab('t-attacks', this)">Attacks</button>
+  <button class="tab-btn" onclick="showTab('t-refs', this)">References</button>
+</nav>
+
+<main>
+
+<!-- ================= START ================= -->
+<section id="t-start" class="tab-panel active">
+  <h2>The whole map, in one breath</h2>
+  <p class="lead">Authentication answers <b>who are you</b>. Authorization answers <b>may you</b>. Everything below is one of those two, plus the plumbing that carries the answer between systems.</p>
+
+  <div class="card">
+    <h3>The mental model</h3>
+    <table>
+      <tr><th>Layer</th><th>Question</th><th>Protocols here</th></tr>
+      <tr><td>Credential</td><td>Prove who you are</td><td>Passwords, TOTP/HOTP, WebAuthn/passkeys, client certs (mTLS)</td></tr>
+      <tr><td>Federation</td><td>Let one system vouch for you to another</td><td>OIDC, SAML, Kerberos</td></tr>
+      <tr><td>Token</td><td>Carry the proof around</td><td>JWT/JOSE, JWKS, DPoP, opaque tokens + introspection</td></tr>
+      <tr><td>Delegation</td><td>Let an app act for you, scoped</td><td>OAuth 2.1 (code+PKCE, refresh, client credentials, device)</td></tr>
+      <tr><td>Authorization</td><td>Decide if this action is allowed</td><td>RBAC, ABAC, ReBAC (Zanzibar)</td></tr>
+      <tr><td>Provisioning</td><td>Create / disable accounts across systems</td><td>SCIM, LDAP</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>How to use this lab</h3>
+    <ul class="tight">
+      <li><b>This page</b> — click through the tabs. Each has live demos you can poke; the cryptography is real (Web Crypto), not mocked.</li>
+      <li><b>The Python library</b> (<code>authlab/</code>) — every protocol implemented from scratch on the standard library only. Read the source; every line that touches a token is meant to be readable in one sitting.</li>
+      <li><b>Drills</b> (<code>drills/</code>) — 13 narrated, self-checking walkthroughs. <code>python drills/run_all.py</code>.</li>
+      <li><b>Attacks</b> (<code>attacks/</code>) — each attack shown breaking a naive implementation, then refused by authlab.</li>
+      <li><b>Tests</b> (<code>tests/</code>) — 108 tests, including the RFC 4226/6238 and FIPS-197 vectors. <code>python -m unittest discover -s tests</code>.</li>
+      <li><b>14-day plan</b> — see the <a href="#" onclick="showTab('t-refs',null);return false;">References</a> tab for the study schedule and the Spring Security mapping.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>Run the real server locally</h3>
+    <div class="out mono">git clone https://github.com/hjosugi/auth-lab
+cd auth-lab
+python -m authlab.server          # OAuth/OIDC AS on :8080
+# then, in another shell:
+curl http://127.0.0.1:8080/.well-known/openid-configuration
+python drills/run_all.py          # watch every protocol run green</div>
+    <div class="note">No <code>pip install</code>. Python 3.11+ standard library only.</div>
+  </div>
+</section>
+
+<!-- ================= JWT ================= -->
+<section id="t-jwt" class="tab-panel">
+  <h2>JWT / JOSE</h2>
+  <p class="lead">A JWT is three base64url segments — <code>header.payload.signature</code> — joined by dots. The signature covers the exact text of the first two segments. Reading it once removes most of the mystery.</p>
+
+  <div class="card demo">
+    <h3>Decode any JWT</h3>
+    <label>Paste a JWT (or use the default)</label>
+    <textarea id="jwt-input">eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhbGljZSIsImF1ZCI6ImFwaTovL29yZGVycyIsInNjb3BlIjoib3JkZXJzOnJlYWQiLCJleHAiOjIwMDAwMDAwMDB9.4s0h2pM8oM_1xN7C6r5vHhE7Vq0kZ8Xw3wZ8bJ8y5A</textarea>
+    <button class="act" onclick="decodeJwt()">Decode &amp; inspect</button>
+    <div class="out" id="jwt-decoded"></div>
+  </div>
+
+  <div class="card demo">
+    <h3>Sign &amp; verify (HS256, real HMAC)</h3>
+    <div class="grid2">
+      <div><label>secret</label><input type="text" id="jwt-secret" value="a-shared-secret-at-least-32-bytes"></div>
+      <div><label>payload (JSON)</label><input type="text" id="jwt-payload" value='{"sub":"alice","scope":"orders:read"}'></div>
+    </div>
+    <button class="act" onclick="jwtSignVerify()">Sign, then verify with right &amp; wrong secret</button>
+    <div class="out" id="jwt-signverify"></div>
+  </div>
+
+  <div class="card demo">
+    <h3>The <code>alg=none</code> forgery</h3>
+    <p>The classic JWT attack. Press the button: it rewrites the payload to <code>sub=admin</code> and sets <code>alg=none</code> with an empty signature, then loads it into the decoder above.</p>
+    <button class="act danger" onclick="forgeAlgNone()">Forge an alg=none admin token</button>
+    <div class="note" id="jwt-attack-note"></div>
+  </div>
+
+  <div class="card">
+    <h3>What the library refuses, and why</h3>
+    <ul class="tight">
+      <li><b>alg=none</b> — <code>JWS.verify</code> requires an explicit algorithm allow-list with no default; 'none' is never in it.</li>
+      <li><b>RS256→HS256 confusion</b> — keys are typed, so an RSA public key can never be fed to HMAC as a secret.</li>
+      <li><b>jwk / jku / x5u headers</b> — refused outright; a token may never nominate its own verification key.</li>
+      <li><b>Claim validation</b> — <code>iss</code>, <code>aud</code> (must contain us), <code>exp</code>, <code>nbf</code>, <code>iat</code>, and OIDC <code>nonce</code> are all checked, not just the signature.</li>
+    </ul>
+    <div class="note">Source: <code>authlab/jose/jws.py</code>, <code>authlab/jose/jwt.py</code></div>
+  </div>
+</section>
+
+<!-- ================= TOTP ================= -->
+<section id="t-totp" class="tab-panel">
+  <h2>TOTP / MFA</h2>
+  <p class="lead">TOTP is HOTP with the counter replaced by <code>floor(now / 30)</code>. Everything hard about it is operational: clock drift, replay, and the fact that the secret is symmetric.</p>
+
+  <div class="card demo">
+    <h3>Live authenticator</h3>
+    <label>base32 secret (default is a common test secret)</label>
+    <input type="text" id="totp-secret" value="JBSWY3DPEHPK3PXP">
+    <button class="act" onclick="startTotp()">Start generating codes</button>
+    <div class="totp-display">
+      <div class="totp-code" id="totp-code">— — —</div>
+      <div class="totp-track"><div class="totp-fill" id="totp-bar" style="width:100%"></div></div>
+      <div class="note" id="totp-remaining"></div>
+    </div>
+    <div class="note" id="totp-note"></div>
+  </div>
+
+  <div class="card demo">
+    <h3>Check against the RFC 6238 vector</h3>
+    <button class="act ghost" onclick="verifyRfcVector()">Verify the published test vector</button>
+    <div class="out" id="totp-vector"></div>
+  </div>
+
+  <div class="card">
+    <h3>Why passkeys beat TOTP</h3>
+    <table>
+      <tr><th>Factor</th><th>Phishable?</th><th>Secret at server?</th></tr>
+      <tr><td>Password</td><td class="bad">yes</td><td class="bad">yes (a hash)</td></tr>
+      <tr><td>TOTP</td><td class="bad">yes (real-time proxy relays the code)</td><td class="bad">yes (the shared secret)</td></tr>
+      <tr><td>Push</td><td class="warn">fatigue attacks</td><td>—</td></tr>
+      <tr><td>Passkey (WebAuthn)</td><td class="good">no — signature bound to origin</td><td class="good">no — only a public key</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- ================= OAuth ================= -->
+<section id="t-oauth" class="tab-panel">
+  <h2>OAuth 2.1 &amp; OpenID Connect</h2>
+  <p class="lead">OAuth is <b>delegation</b> — letting an app act for you, scoped. OIDC adds <b>authentication</b> on top: the ID token tells the app who you are.</p>
+
+  <div class="card demo">
+    <h3>Authorization Code + PKCE flow, step by step</h3>
+    <div id="flow-steps"></div>
+    <div style="margin-top:12px">
+      <button class="act ghost" onclick="flowPrev()">← Prev</button>
+      <button class="act" onclick="flowNext()">Next →</button>
+      <button class="act ghost" onclick="flowReset()">Reset</button>
+      <span class="note" id="flow-progress" style="margin-left:10px"></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>The grants, and which to use</h3>
+    <table>
+      <tr><th>Grant</th><th>For</th><th>Verdict</th></tr>
+      <tr><td>authorization_code + PKCE</td><td>web apps, SPAs, mobile</td><td class="good">the default for anything with a user</td></tr>
+      <tr><td>client_credentials</td><td>service-to-service</td><td class="good">correct for machines (no user)</td></tr>
+      <tr><td>device_code</td><td>TVs, CLIs, no browser</td><td class="good">correct for input-constrained devices</td></tr>
+      <tr><td>refresh_token</td><td>renew without re-login</td><td class="good">with rotation + reuse detection</td></tr>
+      <tr><td>implicit</td><td>—</td><td class="bad">removed in 2.1 (token in the URL fragment)</td></tr>
+      <tr><td>password (ROPC)</td><td>—</td><td class="bad">removed in 2.1 (app sees the password)</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>ID token vs access token — the confusion that breaks APIs</h3>
+    <div class="grid2">
+      <div class="out"><b>ID token</b> (OIDC)
+aud = the CLIENT
+purpose: "who logged in"
+consumed by: the app
+typ: JWT</div>
+      <div class="out"><b>access token</b> (OAuth)
+aud = the API
+purpose: "may call this API"
+consumed by: the resource server
+typ: at+jwt</div>
+    </div>
+    <div class="note">Sending an ID token to an API is a real, common bug. authlab's resource server rejects it on both <code>typ</code> and <code>aud</code>. Try it in the Attacks tab.</div>
+  </div>
+</section>
+
+<!-- ================= PKCE ================= -->
+<section id="t-pkce" class="tab-panel">
+  <h2>PKCE — Proof Key for Code Exchange</h2>
+  <p class="lead">PKCE binds the authorization code to whoever started the flow, so a stolen code is useless. This is the single most important OAuth hardening of the last decade.</p>
+
+  <div class="card demo">
+    <h3>Generate a verifier / challenge pair</h3>
+    <p>The verifier stays secret on the client. Only its SHA-256 (the challenge) travels through the browser.</p>
+    <button class="act" onclick="generatePkce()">Generate (real SHA-256)</button>
+    <label>code_verifier (secret, kept by the client)</label>
+    <div class="out" id="pkce-verifier"></div>
+    <label>code_challenge = base64url(SHA-256(verifier)) — sent on /authorize</label>
+    <div class="out" id="pkce-challenge"></div>
+    <div class="note" id="pkce-note"></div>
+  </div>
+
+  <div class="card demo">
+    <h3>Verify a code_verifier against the challenge</h3>
+    <p>This is what the token endpoint does. Paste the verifier back (or change one character to see it fail).</p>
+    <label>code_verifier presented at the token endpoint</label>
+    <input type="text" id="pkce-check-verifier" placeholder="paste the verifier from above">
+    <button class="act" onclick="verifyPkce()">Check (re-hash &amp; compare)</button>
+    <div class="out" id="pkce-verify-result"></div>
+  </div>
+
+  <div class="card">
+    <h3>Why <code>plain</code> is not PKCE</h3>
+    <p>The <code>plain</code> method sends the verifier itself through the browser — exactly the channel PKCE assumes is compromised. authlab refuses it and requires S256. And if the server accepted a request with <i>no</i> challenge, an attacker would simply omit it, so PKCE is <b>required</b> for public clients, not optional.</p>
+  </div>
+</section>
+
+<!-- ================= PASSWORDS ================= -->
+<section id="t-passwords" class="tab-panel">
+  <h2>Password storage</h2>
+  <p class="lead">Never store the password. Salt per user. Be slow on purpose. Store the parameters so you can raise the cost later.</p>
+
+  <div class="card demo">
+    <h3>Hash a password (PBKDF2, real)</h3>
+    <div class="grid2">
+      <div><label>password</label><input type="text" id="pw-input" value="correct horse battery staple"></div>
+      <div><label>iterations</label><input type="number" id="pw-iter" value="100000"></div>
+    </div>
+    <button class="act" onclick="hashPassword()">Hash &amp; time it</button>
+    <div class="out" id="pw-output"></div>
+    <div class="note">The Python library defaults to scrypt (memory-hard); this browser demo uses PBKDF2 because that is what Web Crypto exposes. Same principle: deliberate slowness.</div>
+  </div>
+
+  <div class="card demo">
+    <h3>The user-enumeration timing oracle</h3>
+    <p>A naive login returns instantly for an unknown user but slowly for a known one. That gap tells an attacker which usernames exist.</p>
+    <button class="act" onclick="demoTiming()">Measure naive vs defended</button>
+    <div class="out" id="pw-timing"></div>
+    <div class="note">The fix (<code>fake_verify</code> in <code>authlab/passwords/hasher.py</code>) burns the same time for a missing user as for a wrong password.</div>
+  </div>
+</section>
+
+<!-- ================= AUTHZ ================= -->
+<section id="t-authz" class="tab-panel">
+  <h2>Authorization models</h2>
+  <p class="lead">RBAC for coarse roles, ABAC for conditions, ReBAC for anything with sharing or hierarchy. They compose; they are not rivals.</p>
+
+  <div class="card demo">
+    <h3>ReBAC (Zanzibar) live check</h3>
+    <p>A Google-Drive-style model: documents live in folders, folders have viewers, groups can be nested. This engine mirrors <code>authlab/authz/rebac.py</code>.</p>
+    <div class="out mono" style="font-size:12px">group:eng#member@user:alice
+group:eng#member@group:platform#member
+group:platform#member@user:carol
+folder:2024#viewer@group:eng#member
+document:budget#parent@folder:2024
+document:budget#owner@user:erin</div>
+    <div class="grid2">
+      <div><label>object</label>
+        <select id="rebac-obj"><option>document:budget</option><option>folder:2024</option></select></div>
+      <div><label>relation</label>
+        <select id="rebac-rel"><option>viewer</option><option>editor</option><option>owner</option></select></div>
+    </div>
+    <label>user</label>
+    <select id="rebac-user">
+      <option>user:alice</option><option>user:carol</option><option>user:erin</option><option>user:mallory</option>
+    </select>
+    <button class="act" onclick="rebacDemo()">check()</button>
+    <div class="out" id="rebac-result"></div>
+    <div class="note">alice via her group, carol via a <b>nested</b> group, erin as owner, mallory denied. All computed by following relation tuples — no permission column anywhere.</div>
+  </div>
+
+  <div class="card">
+    <h3>The one thing RBAC cannot say</h3>
+    <p><code>orders:read</code> means "may read orders". It says nothing about <i>whose</i>. The moment a requirement contains "their own", you need ABAC or ReBAC — and skipping that step is how you ship <b>BOLA/IDOR</b>, the #1 API security risk. Scope is not authorization.</p>
+  </div>
+</section>
+
+<!-- ================= DIAGRAMS ================= -->
+<section id="t-diagrams" class="tab-panel">
+  <h2>プロトコル・フロー図</h2>
+  <p class="lead">主要プロトコルのシーケンス図。全16図は <a href="diagrams.md">docs/diagrams.md</a>（GitHub 上でレンダリング）。この場でも描画されます。</p>
+
+  <div class="card">
+    <h3>OAuth 2.1 認可コード + PKCE</h3>
+    <pre class="mermaid">sequenceDiagram
+    autonumber
+    participant U as User
+    participant C as Client
+    participant AS as Auth Server
+    participant API as Resource Server
+    U->>C: ログイン
+    Note over C: state, nonce, verifier を生成<br/>challenge = SHA-256(verifier)
+    C->>AS: /authorize (challenge のみ)
+    AS->>U: ログイン + MFA
+    Note over AS: redirect_uri 完全一致 / code を challenge に束縛
+    AS->>C: redirect ?code&state
+    Note over C: state 一致確認 (CSRF)
+    C->>AS: POST /token (code + verifier)
+    Note over AS: SHA-256(verifier)==challenge / code を used に
+    AS->>C: access + refresh + id_token
+    C->>API: Bearer access_token
+    Note over API: 署名/typ/iss/aud/exp/scope/所有権
+    API->>C: 200</pre>
+  </div>
+
+  <div class="card">
+    <h3>DPoP 送信者制約</h3>
+    <pre class="mermaid">sequenceDiagram
+    autonumber
+    participant C as Client (P-256 key)
+    participant AS as Auth Server
+    participant API as Resource Server
+    Note over C: proof = ES256 署名 {htm,htu,iat,jti,jwk}
+    C->>AS: POST /token + DPoP proof
+    AS->>C: access_token (cnf.jkt = thumbprint)
+    C->>API: DPoP token + proof (ath)
+    Note over API: thumbprint(proof.jwk)==token.cnf.jkt
+    API->>C: 200
+    C-->>API: 盗難トークンを Bearer で提示
+    API-->>C: 401 (cnf付きをBearerで=拒否)</pre>
+  </div>
+
+  <div class="card">
+    <h3>WebAuthn 認証（フィッシング耐性）</h3>
+    <pre class="mermaid">sequenceDiagram
+    autonumber
+    participant A as Authenticator
+    participant B as Browser
+    participant RP as Relying Party
+    RP->>B: challenge + rpId
+    B->>A: get (origin 付き)
+    Note over A: rp_id に鍵が無ければ署名しない<br/>= 偽サイトには何も返らない
+    A->>B: signature (authData ‖ hash(clientData))
+    B->>RP: assertion
+    Note over RP: origin完全一致 / 公開鍵で検証 / signCount単調増加
+    RP->>B: ログイン成功</pre>
+  </div>
+
+  <div class="card">
+    <h3>Kerberos AS / TGS / AP</h3>
+    <pre class="mermaid">sequenceDiagram
+    autonumber
+    participant C as Client
+    participant AS as KDC-AS
+    participant TGS as KDC-TGS
+    participant S as Service
+    Note over C: kinit (パスワードは一度だけ)
+    C->>AS: AS-REQ + PA-ENC-TIMESTAMP
+    AS->>C: TGT (krbtgt鍵) + セッションキー
+    C->>TGS: TGS-REQ (TGT + authenticator)
+    TGS->>C: サービスチケット (Svc鍵) + 新セッションキー
+    C->>S: AP-REQ (チケット + authenticator)
+    Note over S: 自分の鍵で復号 = KDC発行の証明
+    S->>C: AP-REP (相互認証)</pre>
+  </div>
+
+  <div class="card">
+    <h3>SAML Web SSO</h3>
+    <pre class="mermaid">sequenceDiagram
+    autonumber
+    participant U as User
+    participant SP as Service Provider
+    participant IdP as Identity Provider
+    U->>SP: 保護リソース
+    SP->>IdP: AuthnRequest (RelayState)
+    IdP->>U: ログイン
+    Note over IdP: Assertion に XML-DSig 署名
+    IdP->>SP: 署名付き Response (POST to ACS)
+    Note over SP: 署名/署名対象=Assertion/Issuer/Recipient<br/>InResponseTo/Conditions/Audience/replay
+    SP->>U: セッション確立</pre>
+  </div>
+
+  <div class="card">
+    <h3>リソースサーバの8ステップ（8がBOLA）</h3>
+    <pre class="mermaid">flowchart TD
+    T["Bearer / DPoP token"] --> S1["1 署名 (JWKS kid, alg固定)"]
+    S1 --> S2["2 typ = at+jwt"]
+    S2 --> S3["3 iss"]
+    S3 --> S4["4 aud が自分を含む"]
+    S4 --> S5["5 exp / nbf / iat"]
+    S5 --> S6["6 送信者制約 (DPoP/mTLS)"]
+    S6 --> S7["7 scope"]
+    S7 --> S8["8 所有権"]
+    S8 --> OK["データを返す"]
+    S8 -.->|"scopeだけで済ますと"| BOLA["BOLA / IDOR (OWASP API #1)"]</pre>
+  </div>
+
+  <div class="note" id="mermaid-status">図をレンダリング中… 表示されない場合は <a href="diagrams.md">docs/diagrams.md</a> をご覧ください（GitHub 上で確実に描画されます）。</div>
+</section>
+
+<!-- ================= PROTOCOLS ================= -->
+<section id="t-protocols" class="tab-panel">
+  <h2>SAML · Kerberos · WebAuthn · mTLS · LDAP · SCIM · DPoP</h2>
+  <p class="lead">All implemented from scratch in the Python library. Below is the mental model for each; the code and drills go deeper. <span class="pill impl">implemented</span></p>
+
+  <div class="card">
+    <h3>SAML 2.0 <span class="pill impl">implemented</span></h3>
+    <p>Enterprise SSO's XML predecessor to OIDC. Same shape: SP↔client, IdP↔OP, Assertion↔ID token, Audience↔aud. The hard part is XML-DSig, because you sign a <i>tree</i>, not a byte string — which is where <b>XML Signature Wrapping</b> lives. authlab's defence: <code>verify_signature</code> returns the element that was signed, so a caller cannot be tricked into reading an unsigned sibling.</p>
+    <div class="note">Source: <code>authlab/saml/</code> · Drill 09 lands a real XSW attack and shows it refused.</div>
+  </div>
+
+  <div class="card">
+    <h3>Kerberos <span class="pill impl">implemented</span></h3>
+    <p>The symmetric-key protocol behind every Active Directory. A KDC issues a TGT (encrypted to <code>krbtgt</code>) and service tickets (encrypted to each service). The service verifies a ticket without ever calling the KDC — that is why it scales. The lab includes working <b>Kerberoasting</b>, <b>AS-REP roasting</b>, <b>golden tickets</b>, and <b>pass-the-ticket</b>, so the AD attack family is concrete.</p>
+    <div class="note">Source: <code>authlab/kerberos/</code> · Drill 10.</div>
+  </div>
+
+  <div class="card">
+    <h3>WebAuthn / passkeys <span class="pill impl">implemented</span></h3>
+    <p>A key pair per site; the private key never leaves the authenticator, and the signature is bound to the origin. That origin binding is the phishing resistance: a look-alike domain gets no signature because there is no key for it. The lab has a virtual authenticator and a full relying party (COSE keys, attestation, signature-counter clone detection, syncable-passkey handling).</p>
+    <div class="note">Source: <code>authlab/webauthn/</code> · Drill 11.</div>
+  </div>
+
+  <div class="card">
+    <h3>mTLS <span class="pill impl">implemented (real TLS handshake)</span></h3>
+    <p>Client authentication moved into the TLS handshake itself. This is the one protocol the lab runs over a <b>real socket</b>: a CA we mint issues certs that Python's <code>ssl</code> module genuinely verifies. It also wires into OAuth via RFC 8705 — a token bound to the client certificate (<code>cnf.x5t#S256</code>) is useless without it.</p>
+    <div class="note">Source: <code>authlab/mtls/</code>, <code>authlab/crypto/x509.py</code> · Drill 12.</div>
+  </div>
+
+  <div class="card">
+    <h3>DPoP <span class="pill impl">implemented</span></h3>
+    <p>The software answer to bearer-token theft (RFC 9449). The client holds a key and signs a proof for every request; the token carries the key's thumbprint in <code>cnf.jkt</code>. A stolen token is useless without the private key. Note the deliberate contrast with JWS: here the inline <code>jwk</code> is <i>correct</i>, because it is checked against a thumbprint from a token the AS signed.</p>
+    <div class="note">Source: <code>authlab/oauth/dpop.py</code> · Drill 07.</div>
+  </div>
+
+  <div class="card">
+    <h3>LDAP <span class="pill impl">implemented</span></h3>
+    <p>The directory behind corporate login. Two traps: <b>LDAP injection</b> (build a filter from user input and <code>*)(uid=*</code> matches everyone) and the <b>anonymous-bind trap</b> (a bind with an empty password succeeds as anonymous, so blank-password logins let anyone in). authlab does search-then-bind with a real filter parser and refuses empty passwords.</p>
+    <div class="note">Source: <code>authlab/directory/ldap.py</code> · Drill 13.</div>
+  </div>
+
+  <div class="card">
+    <h3>SCIM 2.0 <span class="pill impl">implemented</span></h3>
+    <p>How identities get provisioned and — crucially — <b>deprovisioned</b> across SaaS apps. The lesson: deactivation (<code>active:false</code> via PATCH), not deletion, is the event that matters, and your app must consult <code>active</code> on every request or ex-employees keep their access until their token expires.</p>
+    <div class="note">Source: <code>authlab/directory/scim.py</code> · Drill 13.</div>
+  </div>
+</section>
+
+<!-- ================= ATTACKS ================= -->
+<section id="t-attacks" class="tab-panel">
+  <h2>Attacks</h2>
+  <p class="lead">Every attack this lab resists, shown breaking a naive implementation and then refused. Two are interactive here; the rest run in <code>attacks/catalog.py</code>.</p>
+
+  <div class="card demo">
+    <h3><code>redirect_uri</code>: exact match vs startsWith</h3>
+    <p>Registered: <code>https://app.example.com/callback</code>. Try an attacker's variation.</p>
+    <label>candidate redirect_uri</label>
+    <input type="text" id="redir-input" value="https://app.example.com/callback.attacker.net">
+    <button class="act" onclick="checkRedirect()">Compare both matching strategies</button>
+    <div class="out" id="redir-result"></div>
+  </div>
+
+  <div class="card">
+    <h3>The full catalog</h3>
+    <table>
+      <tr><th>#</th><th>Attack</th><th>Defended by</th></tr>
+      <tr><td>1</td><td>alg=none</td><td>required algorithm allow-list</td></tr>
+      <tr><td>2</td><td>RS256→HS256 confusion</td><td>typed keys + allow-list</td></tr>
+      <tr><td>3</td><td>JWT jwk header injection</td><td>forbidden key-nominating headers</td></tr>
+      <tr><td>4</td><td>Missing state → login CSRF</td><td>state required, bound to session</td></tr>
+      <tr><td>5</td><td>redirect_uri prefix matching</td><td>exact match only</td></tr>
+      <tr><td>6</td><td>Authorization code replay</td><td>single-use + family revoke</td></tr>
+      <tr><td>7</td><td>PKCE downgrade / omission</td><td>PKCE required for public clients</td></tr>
+      <tr><td>8</td><td>Refresh token replay</td><td>rotation + reuse detection</td></tr>
+      <tr><td>9</td><td>ID token used as access token</td><td>typ + aud checks</td></tr>
+      <tr><td>10</td><td>BOLA / IDOR</td><td>ownership check ≠ scope check</td></tr>
+      <tr><td>11</td><td>Bearer token replay</td><td>DPoP / mTLS sender constraint</td></tr>
+      <tr><td>12</td><td>LDAP injection</td><td>escaping + real parser</td></tr>
+      <tr><td>13</td><td>LDAP anonymous bind</td><td>empty-password rejection</td></tr>
+      <tr><td>14</td><td>User enumeration by timing</td><td>constant-time fake_verify</td></tr>
+      <tr><td>15</td><td>XML signature wrapping</td><td>return-the-signed-element</td></tr>
+      <tr><td>16-19</td><td>Kerberoasting, AS-REP roasting, golden ticket, pass-the-ticket</td><td>strong service passwords, preauth, krbtgt hygiene, short tickets</td></tr>
+    </table>
+    <div class="note">Full CWE / OWASP mapping: <code>docs/09_attack_matrix.md</code>.</div>
+  </div>
+</section>
+
+<!-- ================= REFS ================= -->
+<section id="t-refs" class="tab-panel">
+  <h2>References &amp; study plan</h2>
+  <p class="lead">The specs, the best learning sites, the 14-day plan, and the Spring Security mapping.</p>
+
+  <div class="card">
+    <h3>Primary specifications</h3>
+    <ul class="tight">
+      <li>OAuth 2.0 — <a href="https://datatracker.ietf.org/doc/html/rfc6749">RFC 6749</a>, threat model <a href="https://datatracker.ietf.org/doc/html/rfc6819">RFC 6819</a></li>
+      <li>OAuth 2.1 draft — <a href="https://datatracker.ietf.org/doc/html/draft-ietf-oauth-v2-1">draft-ietf-oauth-v2-1</a>, Security BCP <a href="https://datatracker.ietf.org/doc/html/rfc9700">RFC 9700</a></li>
+      <li>PKCE — <a href="https://datatracker.ietf.org/doc/html/rfc7636">RFC 7636</a></li>
+      <li>OpenID Connect Core — <a href="https://openid.net/specs/openid-connect-core-1_0.html">spec</a></li>
+      <li>JWT / JWS / JWK / JWA — <a href="https://datatracker.ietf.org/doc/html/rfc7519">7519</a> / <a href="https://datatracker.ietf.org/doc/html/rfc7515">7515</a> / <a href="https://datatracker.ietf.org/doc/html/rfc7517">7517</a> / <a href="https://datatracker.ietf.org/doc/html/rfc7518">7518</a>; JWT BCP <a href="https://datatracker.ietf.org/doc/html/rfc8725">RFC 8725</a></li>
+      <li>Token introspection / revocation — <a href="https://datatracker.ietf.org/doc/html/rfc7662">7662</a> / <a href="https://datatracker.ietf.org/doc/html/rfc7009">7009</a></li>
+      <li>Device flow — <a href="https://datatracker.ietf.org/doc/html/rfc8628">RFC 8628</a>; DPoP — <a href="https://datatracker.ietf.org/doc/html/rfc9449">RFC 9449</a>; mTLS tokens — <a href="https://datatracker.ietf.org/doc/html/rfc8705">RFC 8705</a></li>
+      <li>HOTP / TOTP — <a href="https://datatracker.ietf.org/doc/html/rfc4226">4226</a> / <a href="https://datatracker.ietf.org/doc/html/rfc6238">6238</a></li>
+      <li>WebAuthn — <a href="https://www.w3.org/TR/webauthn-2/">W3C Level 2</a>; CTAP2 — <a href="https://fidoalliance.org/specs/fido-v2.1-ps-20210615/fido-client-to-authenticator-protocol-v2.1-ps-20210615.html">FIDO2</a></li>
+      <li>SAML 2.0 — <a href="https://docs.oasis-open.org/security/saml/v2.0/saml-core-2.0-os.pdf">core</a>; XML-DSig — <a href="https://www.w3.org/TR/xmldsig-core/">W3C</a></li>
+      <li>Kerberos v5 — <a href="https://datatracker.ietf.org/doc/html/rfc4120">RFC 4120</a></li>
+      <li>SCIM 2.0 — <a href="https://datatracker.ietf.org/doc/html/rfc7643">7643</a> / <a href="https://datatracker.ietf.org/doc/html/rfc7644">7644</a>; LDAP — <a href="https://datatracker.ietf.org/doc/html/rfc4511">4511</a>, filters <a href="https://datatracker.ietf.org/doc/html/rfc4515">4515</a></li>
+      <li>Zanzibar (ReBAC) — <a href="https://research.google/pubs/pub48190/">Google paper</a></li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>Best learning sites</h3>
+    <ul class="tight">
+      <li><a href="https://oauth.net/2/">oauth.net</a> — Aaron Parecki's canonical hub for OAuth 2.x</li>
+      <li><a href="https://www.oauth.com/">oauth.com</a> — free book, "OAuth 2.0 Simplified"</li>
+      <li><a href="https://jwt.io/">jwt.io</a> — the JWT debugger everyone uses (this tab is a self-contained cousin)</li>
+      <li><a href="https://openid.net/developers/how-connect-works/">OpenID: how Connect works</a></li>
+      <li><a href="https://webauthn.guide/">webauthn.guide</a> and <a href="https://webauthn.io/">webauthn.io</a> — interactive passkey demos</li>
+      <li><a href="https://owasp.org/API-Security/editions/2023/en/0x11-t10/">OWASP API Security Top 10 (2023)</a> — BOLA/BFLA and friends</li>
+      <li><a href="https://cheatsheetseries.owasp.org/">OWASP Cheat Sheet Series</a> — authn, session, password storage, JWT</li>
+      <li><a href="https://www.rfc-editor.org/rfc/rfc9700">RFC 9700</a> — the OAuth Security BCP, the single best "what to actually do" doc</li>
+      <li><a href="https://portswigger.net/web-security/oauth">PortSwigger Web Security Academy — OAuth</a> — free hands-on labs</li>
+      <li><a href="https://www.imperva.com/learn/application-security/">Imperva / PortSwigger writeups</a> on SAML XSW and Kerberoasting</li>
+      <li><a href="https://book.hacktricks.xyz/">HackTricks</a> — practical Kerberos/AD attack reference (Kerberoasting, golden ticket, DCsync)</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>14-day plan &amp; Spring Security mapping</h3>
+    <p>The full day-by-day study schedule, the mapping from every authlab concept to its Spring Security class, and an English interview script live in the repo docs:</p>
+    <ul class="tight">
+      <li><a href="10_spring_security_map.md">docs/10_spring_security_map.md</a> — authlab ↔ Spring Security</li>
+      <li><a href="11_14day_plan.md">docs/11_14day_plan.md</a> — the 14-day drill schedule</li>
+      <li><a href="12_interview_english.md">docs/12_interview_english.md</a> — English talking points for interviews</li>
+      <li><a href="09_attack_matrix.md">docs/09_attack_matrix.md</a> — attacks ↔ CWE ↔ OWASP</li>
+    </ul>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  auth-lab — built from scratch on the Python standard library. All demos on this page run real cryptography locally in your browser; nothing is sent anywhere.<br>
+  <a href="https://github.com/hjosugi/auth-lab">github.com/hjosugi/auth-lab</a>
+</footer>
+
+<script src="assets/lab.js"></script>
+<script type="module">
+  // Mermaid renders the Diagrams tab. Loaded from a CDN (GitHub Pages allows
+  // external scripts); if it cannot load (offline / file://), the fallback
+  // note stays and points to docs/diagrams.md, which GitHub renders natively.
+  try {
+    const theme = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "default";
+    const mod = await import("https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs");
+    mod.default.initialize({ startOnLoad: true, theme, securityLevel: "strict" });
+    await mod.default.run();
+    const status = document.getElementById("mermaid-status");
+    if (status) status.textContent = "全16図は docs/diagrams.md にあります。";
+  } catch (e) {
+    const status = document.getElementById("mermaid-status");
+    if (status) status.innerHTML = 'この環境では図ライブラリを読み込めませんでした。<a href="diagrams.md">docs/diagrams.md</a> を GitHub 上でご覧ください（確実に描画されます）。';
+  }
+</script>
+</body>
+</html>
