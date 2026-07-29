@@ -346,7 +346,7 @@ flowchart TD
     S6 --> S7["7. scope（このエンドポイント）"]
     S7 --> S8["8. 所有権（このユーザのこのオブジェクトか）"]
     S8 --> OK["データを返す"]
-    S8 -.->|"scopeだけで済ませると"| BOLA["❌ BOLA / IDOR<br/>OWASP API #1"]
+    S8 -.-> BOLA["scope だけでは不十分<br/>❌ BOLA / IDOR<br/>OWASP API #1"]
 ```
 
 ---
