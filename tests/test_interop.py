@@ -175,6 +175,20 @@ class TestInteropComposeIsolation(unittest.TestCase):
     def test_keycloak_heap_override_does_not_conflict_with_image_defaults(self):
         self.assertNotIn("HeapFreeRatio", self.compose)
 
+    def test_saml_client_has_an_idp_initiated_url_name(self):
+        realm = json.loads(
+            (
+                ROOT / "interop" / "keycloak" / "auth-lab-interop-realm.json"
+            ).read_text(encoding="utf-8")
+        )
+        saml_client = next(
+            client for client in realm["clients"] if client["clientId"] == "authlab-saml"
+        )
+        self.assertEqual(
+            saml_client["attributes"]["saml_idp_initiated_sso_url_name"],
+            "authlab-saml",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

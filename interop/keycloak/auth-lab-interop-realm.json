@@ -65,6 +65,7 @@
         "http://127.0.0.1:18090/saml/acs"
       ],
       "attributes": {
+        "saml_idp_initiated_sso_url_name": "authlab-saml",
         "saml.authnstatement": "true",
         "saml.client.signature": "false",
         "saml.assertion.signature": "true",
