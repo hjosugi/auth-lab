@@ -225,7 +225,7 @@ class MutualTLSClient:
                 # alert on the first read/write rather than in wrap_socket.
                 tls.sendall(payload)
                 return tls.recv(4096)
-            except ssl.SSLError as exc:
+            except (OSError, ssl.SSLError) as exc:
                 raise MTLSError(f"TLS certificate rejected: {exc}") from exc
             finally:
                 try:
