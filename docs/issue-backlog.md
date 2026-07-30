@@ -14,17 +14,17 @@
 | [#2](https://github.com/hjosugi/auth-lab/issues/2) | Open | 学習 | Week 1: 土台とトークン（Day 1–7） |
 | [#3](https://github.com/hjosugi/auth-lab/issues/3) | Open | 学習 | Week 2: エンタープライズと高度なトークン（Day 8–14） |
 | [#4](https://github.com/hjosugi/auth-lab/issues/4) | Closed | CI | Actionsで全検証を実行、badgeを追加 |
-| [#5](https://github.com/hjosugi/auth-lab/issues/5) | Open | SAML | exc-c14nと実IdP相互運用 |
+| [#5](https://github.com/hjosugi/auth-lab/issues/5) | Closed | SAML | exc-c14nと実IdP相互運用 |
 | [#6](https://github.com/hjosugi/auth-lab/issues/6) | Open | Interop | OAuth/LDAP/Kerberos/SAML container lab |
 | [#7](https://github.com/hjosugi/auth-lab/issues/7) | Open | Pages | Pyodideで実Pythonモジュールを実行 |
-| [#8](https://github.com/hjosugi/auth-lab/issues/8) | Open | OAuth | PAR/JAR/JARM/RAR/CIBA/FAPI 2.0 |
+| [#8](https://github.com/hjosugi/auth-lab/issues/8) | Closed | OAuth | PAR/JAR/JARM/RAR/CIBA/FAPI 2.0 |
 | [#9](https://github.com/hjosugi/auth-lab/issues/9) | Open | WebAuthn | 実ブラウザpasskey E2E |
-| [#10](https://github.com/hjosugi/auth-lab/issues/10) | Open | Authz | Cedar/Rego/RBAC/ABAC/ReBAC比較 |
-| [#11](https://github.com/hjosugi/auth-lab/issues/11) | Open | Crypto | Ed25519とES256のJOSE/WebAuthn対応 |
+| [#10](https://github.com/hjosugi/auth-lab/issues/10) | Closed | Authz | Cedar/Rego/RBAC/ABAC/ReBAC比較 |
+| [#11](https://github.com/hjosugi/auth-lab/issues/11) | Closed | Crypto | Ed25519とES256のJOSE/WebAuthn対応 |
 | [#12](https://github.com/hjosugi/auth-lab/issues/12) | Open | Testing | property/fuzz/conformance test |
 | [#13](https://github.com/hjosugi/auth-lab/issues/13) | Open | Spring | Java 21 Spring Security companion |
-| [#14](https://github.com/hjosugi/auth-lab/issues/14) | Open | Pages | 二言語interactive sequence |
-| [#15](https://github.com/hjosugi/auth-lab/issues/15) | Open | Password | Argon2idと定数時間注記 |
+| [#14](https://github.com/hjosugi/auth-lab/issues/14) | Closed | Pages | 二言語interactive sequence |
+| [#15](https://github.com/hjosugi/auth-lab/issues/15) | Closed | Password | Argon2idと定数時間注記 |
 
 ## 1. Containerized interoperability lab
 
@@ -97,6 +97,10 @@ SAML IdPを起動し、教材実装の概念を実製品のwire flowへ対応付
 ## 7. Interactive sequence animations and bilingual narration
 
 **Goal:** Pagesのflow図を操作可能にし、日本語/英語で同じ概念を説明する。
+
+**実装:** [GitHub PagesのFlows × 4](https://hjosugi.github.io/auth-lab/) と
+`docs/assets/sequences.js`。21 messageすべてにasset、trust boundary、bindingの共通concept IDと
+日英narrationを持ち、`tests/browser/sequence-player.test.js`でcontrolsとaccessibilityを検証する。
 
 **Acceptance criteria:**
 

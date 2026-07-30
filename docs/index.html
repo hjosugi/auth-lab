@@ -18,6 +18,7 @@
 
 <nav class="tabs">
   <button class="tab-btn active" onclick="showTab('t-start', this)">Start here</button>
+  <button class="tab-btn" onclick="showTab('t-sequences', this)">Flows × 4 / 日英</button>
   <button class="tab-btn" onclick="showTab('t-jwt', this)">JWT</button>
   <button class="tab-btn" onclick="showTab('t-totp', this)">TOTP / MFA</button>
   <button class="tab-btn" onclick="showTab('t-oauth', this)">OAuth / OIDC</button>
@@ -71,6 +72,69 @@ python -m authlab.server          # OAuth/OIDC AS on :8080
 curl http://127.0.0.1:8080/.well-known/openid-configuration
 python drills/run_all.py          # watch every protocol run green</div>
     <div class="note">No <code>pip install</code>. Python 3.11+ standard library only.</div>
+  </div>
+</section>
+
+<!-- ================= SEQUENCES ================= -->
+<section id="t-sequences" class="tab-panel">
+  <h2>4プロトコルをmessageごとに追う</h2>
+  <p class="lead">OAuth、SAML、Kerberos、WebAuthnで「何を守るか」「どのtrust boundaryを越えるか」「何を何へ束縛するか」を、日本語と英語で同じstepごとに確認します。</p>
+
+  <div class="card demo sequence-shell" id="sequence-shell" tabindex="0"
+       aria-label="Interactive protocol sequence. Use left and right arrows, Home, or End.">
+    <div class="grid2">
+      <div>
+        <label for="sequence-flow">Protocol</label>
+        <select id="sequence-flow">
+          <option value="oauth">OAuth 2.0 Authorization Code + PKCE</option>
+          <option value="saml">SAML 2.0 Web SSO</option>
+          <option value="kerberos">Kerberos AS / TGS / AP</option>
+          <option value="webauthn">WebAuthn authentication</option>
+        </select>
+      </div>
+      <div>
+        <label for="sequence-language">Narration / 解説言語</label>
+        <select id="sequence-language">
+          <option value="ja">日本語</option>
+          <option value="en">English</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="sequence-message-card" id="sequence-card">
+      <div class="sequence-route" aria-hidden="true">
+        <span class="sequence-actor" id="sequence-from"></span>
+        <span class="sequence-arrow">→</span>
+        <span class="sequence-actor" id="sequence-to"></span>
+      </div>
+      <h3 id="sequence-message"></h3>
+      <p id="sequence-narration" aria-live="polite" aria-atomic="true"></p>
+      <dl class="sequence-facts">
+        <div class="sequence-fact asset">
+          <dt id="sequence-asset-label">守るasset</dt>
+          <dd id="sequence-asset"></dd>
+        </div>
+        <div class="sequence-fact boundary">
+          <dt id="sequence-boundary-label">越えるtrust boundary</dt>
+          <dd id="sequence-boundary"></dd>
+        </div>
+        <div class="sequence-fact binding">
+          <dt id="sequence-binding-label">検証するbinding</dt>
+          <dd id="sequence-binding"></dd>
+        </div>
+      </dl>
+    </div>
+
+    <div class="sequence-controls" aria-label="Sequence controls">
+      <button class="act ghost" id="sequence-previous" type="button"
+              aria-keyshortcuts="ArrowLeft">← 前へ</button>
+      <button class="act" id="sequence-next" type="button"
+              aria-keyshortcuts="ArrowRight">次へ →</button>
+      <button class="act ghost" id="sequence-reset" type="button"
+              aria-keyshortcuts="Home">最初へ</button>
+      <span class="sequence-progress" id="sequence-progress" role="status"></span>
+    </div>
+    <div class="note">Keyboard: <span class="kbd">←</span>/<span class="kbd">→</span>で1message移動、<span class="kbd">Home</span>で先頭、<span class="kbd">End</span>で末尾。OSのreduced motion設定を尊重します。</div>
   </div>
 </section>
 
@@ -156,17 +220,6 @@ python drills/run_all.py          # watch every protocol run green</div>
 <section id="t-oauth" class="tab-panel">
   <h2>OAuth 2.0 + Security BCP &amp; OpenID Connect</h2>
   <p class="lead">OAuth is <b>delegation</b> — letting an app act for you, scoped. OIDC adds <b>authentication</b> on top: the ID token tells the app who you are.</p>
-
-  <div class="card demo">
-    <h3>Authorization Code + PKCE flow, step by step</h3>
-    <div id="flow-steps"></div>
-    <div style="margin-top:12px">
-      <button class="act ghost" onclick="flowPrev()">← Prev</button>
-      <button class="act" onclick="flowNext()">Next →</button>
-      <button class="act ghost" onclick="flowReset()">Reset</button>
-      <span class="note" id="flow-progress" style="margin-left:10px"></span>
-    </div>
-  </div>
 
   <div class="card">
     <h3>The grants, and which to use</h3>
@@ -587,6 +640,7 @@ document:budget#owner@user:erin</div>
   <a href="https://github.com/hjosugi/auth-lab">github.com/hjosugi/auth-lab</a>
 </footer>
 
+<script src="assets/sequences.js"></script>
 <script src="assets/lab.js"></script>
 <script type="module">
   // Mermaid renders the Diagrams tab. Loaded from a CDN (GitHub Pages allows

@@ -26,7 +26,9 @@ jobs:
       - name: Verify browser JavaScript
         run: |
           node --check docs/assets/lab.js
+          node --check docs/assets/sequences.js
           node --check site/app.js
+          node --test tests/browser/*.test.js
       - name: Build learning bundle
         run: python scripts/build_zip.py
       - uses: actions/upload-artifact@v4

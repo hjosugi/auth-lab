@@ -284,36 +284,7 @@ async function demoTiming() {
 }
 
 /* ------------------------------------------------------------------ */
-/* 6. Authorization Code + PKCE flow visualizer                      */
-/* ------------------------------------------------------------------ */
-
-const flowSteps = [
-  { who: "User → Client", t: "User clicks 'Log in'. The client (a SPA or web app) starts the flow." },
-  { who: "Client", t: "Generate state (CSRF token), nonce, and a PKCE verifier. Store them for this browser session. Compute challenge = SHA-256(verifier)." },
-  { who: "Client → Browser → AS", t: "Redirect to /authorize?response_type=code&client_id=...&redirect_uri=...&state=...&code_challenge=...&code_challenge_method=S256 . Only the challenge travels, never the verifier." },
-  { who: "AS", t: "Validate client_id and redirect_uri (EXACT match). Authenticate the user (password + MFA). Bind a fresh authorization code to the challenge, the user, and the redirect_uri." },
-  { who: "AS → Browser → Client", t: "302 back to the redirect_uri with ?code=...&state=... The code passes through the browser, so it is short-lived and single-use." },
-  { who: "Client", t: "Check the returned state == the stored state (CSRF defence). If it mismatches, refuse — this is login-CSRF protection." },
-  { who: "Client → AS (back channel)", t: "POST /token with code + code_verifier (+ client_secret if confidential). This is a direct server call, not through the browser." },
-  { who: "AS", t: "Re-check redirect_uri, verify SHA-256(verifier) == stored challenge (PKCE), mark the code used. Mint access_token (short), refresh_token (rotating), id_token (OIDC)." },
-  { who: "Client", t: "Fully validate the id_token: signature via JWKS, iss, aud == client_id, exp, and nonce == stored nonce." },
-  { who: "Client → API", t: "Call the API with Authorization: Bearer <access_token>." },
-  { who: "API (resource server)", t: "Verify signature, typ=at+jwt, iss, aud==this API, exp, then scope, then object ownership. Only now serve the data." },
-];
-let flowIdx = 0;
-function renderFlow() {
-  const box = document.getElementById("flow-steps");
-  box.innerHTML = flowSteps.map((s, i) =>
-    `<div class="flow-step ${i === flowIdx ? "active" : ""} ${i < flowIdx ? "done" : ""}">` +
-    `<div class="flow-who">${s.who}</div><div>${s.t}</div></div>`).join("");
-  document.getElementById("flow-progress").textContent = `Step ${flowIdx + 1} / ${flowSteps.length}`;
-}
-function flowNext() { if (flowIdx < flowSteps.length - 1) flowIdx++; renderFlow(); }
-function flowPrev() { if (flowIdx > 0) flowIdx--; renderFlow(); }
-function flowReset() { flowIdx = 0; renderFlow(); }
-
-/* ------------------------------------------------------------------ */
-/* 7. Authorization models: RBAC / ABAC / ReBAC / Cedar / Rego        */
+/* 6. Authorization models: RBAC / ABAC / ReBAC / Cedar / Rego        */
 /* ------------------------------------------------------------------ */
 
 const policySubjects = {
@@ -500,7 +471,6 @@ function showTab(id, btn) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  if (document.getElementById("flow-steps")) renderFlow();
   if (document.getElementById("jwt-input")) decodeJwt();
   if (document.getElementById("policy-scenario")) policyParityDemo();
   // report Web Crypto availability
