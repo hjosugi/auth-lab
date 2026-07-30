@@ -28,8 +28,24 @@ import hashlib
 from dataclasses import dataclass, field
 from typing import Any, Callable
 
+from ..crypto.ec import (
+    CURVES_BY_JOSE_CRV,
+    Curve,
+    ECPrivateKey,
+    ECPublicKey,
+    Point,
+    is_on_curve,
+)
+from ..crypto.ed25519 import KEY_SIZE as ED25519_KEY_SIZE
+from ..crypto.ed25519 import Ed25519PrivateKey, Ed25519PublicKey
 from ..crypto.rsa import RSAPrivateKey, RSAPublicKey
-from ..util.encoding import b64u_decode_int, b64u_encode, b64u_encode_int, json_compact
+from ..util.encoding import (
+    b64u_decode,
+    b64u_decode_int,
+    b64u_encode,
+    b64u_encode_int,
+    json_compact,
+)
 
 
 @dataclass(frozen=True)
@@ -86,6 +102,71 @@ class JWK:
         return cls(data)
 
     @classmethod
+    def from_ec_public(
+        cls, key: ECPublicKey, kid: str | None = None, alg: str | None = None, use: str = "sig"
+    ) -> "JWK":
+        """RFC 7518 section 6.2: an EC key is the curve name and two coordinates.
+
+        Both coordinates are padded to the curve's field width. Trimming a
+        leading zero byte is the same interop bug as trimming an RSA modulus,
+        and it bites more often here because P-521 coordinates start with a
+        zero byte roughly half the time.
+        """
+        curve = key.curve
+        data = {
+            "kty": "EC",
+            "use": use,
+            "alg": alg or curve.jose_alg,
+            "crv": curve.jose_crv,
+            "x": b64u_encode_int(key.x, curve.field_bytes),
+            "y": b64u_encode_int(key.y, curve.field_bytes),
+        }
+        data["kid"] = kid or cls.thumbprint(data)
+        return cls(data)
+
+    @classmethod
+    def from_ec_private(
+        cls, key: ECPrivateKey, kid: str | None = None, alg: str | None = None
+    ) -> "JWK":
+        """Full private EC JWK. Never publish this."""
+        public = cls.from_ec_public(key.public, kid=kid, alg=alg)
+        data = dict(public.data)
+        data["d"] = b64u_encode_int(key.d, key.curve.field_bytes)
+        return cls(data)
+
+    @classmethod
+    def from_okp_public(
+        cls,
+        key: Ed25519PublicKey,
+        kid: str | None = None,
+        alg: str = "EdDSA",
+        use: str = "sig",
+    ) -> "JWK":
+        """RFC 8037: octet key pair. One coordinate, because the point is
+        compressed -- an Ed25519 public key is already just 32 bytes."""
+        data = {
+            "kty": "OKP",
+            "use": use,
+            "alg": alg,
+            "crv": "Ed25519",
+            "x": b64u_encode(key.data),
+        }
+        data["kid"] = kid or cls.thumbprint(data)
+        return cls(data)
+
+    @classmethod
+    def from_okp_private(
+        cls, key: Ed25519PrivateKey, kid: str | None = None, alg: str = "EdDSA"
+    ) -> "JWK":
+        """Full private OKP JWK. `d` is the 32-byte seed, not the expanded
+        scalar -- a distinction that silently breaks key import when a library
+        writes one and reads the other."""
+        public = cls.from_okp_public(key.public, kid=kid, alg=alg)
+        data = dict(public.data)
+        data["d"] = b64u_encode(key.seed)
+        return cls(data)
+
+    @classmethod
     def from_secret(cls, secret: bytes, kid: str, alg: str = "HS256") -> "JWK":
         return cls({"kty": "oct", "kid": kid, "alg": alg, "k": b64u_encode(secret)})
 
@@ -105,6 +186,9 @@ class JWK:
             required = {"k": data["k"], "kty": "oct"}
         elif kty == "EC":
             required = {"crv": data["crv"], "kty": "EC", "x": data["x"], "y": data["y"]}
+        elif kty == "OKP":
+            # RFC 8037 section 2: crv, kty, x -- no y, the point is compressed.
+            required = {"crv": data["crv"], "kty": "OKP", "x": data["x"]}
         else:
             raise ValueError(f"cannot compute thumbprint for kty={kty!r}")
         canonical = json_compact({k: required[k] for k in sorted(required)})
@@ -120,14 +204,64 @@ class JWK:
             raise ValueError(f"not an RSA key: kty={self.kty!r}")
         return RSAPublicKey(n=b64u_decode_int(self.data["n"]), e=b64u_decode_int(self.data["e"]))
 
+    @property
+    def curve(self) -> Curve:
+        """The named curve for an EC key, resolved strictly.
+
+        `crv` is what pins the key to one algorithm. A JWKS that says P-256
+        while carrying 48-byte coordinates is either corrupt or an attempt at
+        cross-curve confusion, so the width check below is not optional.
+        """
+        if self.kty != "EC":
+            raise ValueError(f"not an EC key: kty={self.kty!r}")
+        name = self.data.get("crv")
+        curve = CURVES_BY_JOSE_CRV.get(name) if isinstance(name, str) else None
+        if curve is None:
+            raise ValueError(f"unsupported EC curve: {name!r}")
+        return curve
+
+    def to_ec_public(self) -> ECPublicKey:
+        curve = self.curve
+        x_raw, y_raw = b64u_decode(self.data["x"]), b64u_decode(self.data["y"])
+        if len(x_raw) != curve.field_bytes or len(y_raw) != curve.field_bytes:
+            raise ValueError(
+                f"{curve.jose_crv} coordinates must be {curve.field_bytes} bytes each"
+            )
+        point = Point(int.from_bytes(x_raw, "big"), int.from_bytes(y_raw, "big"), curve)
+        if not is_on_curve(point):
+            # Invalid-curve attack: a point that is not on the curve can leak
+            # the private scalar of whoever does arithmetic with it.
+            raise ValueError(f"JWK point is not on {curve.jose_crv}")
+        return ECPublicKey(point)
+
+    def to_okp_public(self) -> Ed25519PublicKey:
+        if self.kty != "OKP":
+            raise ValueError(f"not an OKP key: kty={self.kty!r}")
+        if self.data.get("crv") != "Ed25519":
+            # X25519 is a key-agreement curve and cannot sign. Accepting it
+            # here would be a type confusion, not a missing feature.
+            raise ValueError(f"unsupported OKP curve: {self.data.get('crv')!r}")
+        raw = b64u_decode(self.data["x"])
+        if len(raw) != ED25519_KEY_SIZE:
+            raise ValueError(f"Ed25519 x must be {ED25519_KEY_SIZE} bytes, got {len(raw)}")
+        return Ed25519PublicKey(raw)
+
     def key_material(self) -> Any:
-        """The object the JWS layer expects: RSAPublicKey or raw bytes."""
+        """The object the JWS layer expects, typed per kty.
+
+        Returning a *typed* object rather than raw bytes is what makes
+        algorithm confusion impossible one layer up: `Algorithm.verify` for
+        HS256 rejects anything that is not bytes, so an RSA or EC public key
+        can never be reinterpreted as an HMAC secret.
+        """
         if self.kty == "RSA":
             return self.to_rsa_public()
+        if self.kty == "EC":
+            return self.to_ec_public()
+        if self.kty == "OKP":
+            return self.to_okp_public()
         if self.kty == "oct":
-            return b64u_decode_int(self.data["k"]).to_bytes(
-                len(self.data["k"]) * 3 // 4, "big"
-            )
+            return b64u_decode(self.data["k"])
         raise ValueError(f"unsupported kty: {self.kty!r}")
 
 

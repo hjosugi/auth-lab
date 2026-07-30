@@ -1,5 +1,19 @@
 from .errors import JOSEError, InvalidSignature, InvalidToken, ExpiredToken, ClaimError
-from .jws import JWS, HS256, HS384, HS512, RS256, RS384, RS512, Algorithm, ALGORITHMS
+from .jws import (
+    JWS,
+    HS256,
+    HS384,
+    HS512,
+    RS256,
+    RS384,
+    RS512,
+    ES256,
+    ES384,
+    ES512,
+    EdDSA,
+    Algorithm,
+    ALGORITHMS,
+)
 from .jwt import JWT, JWTClaims, JWTValidator
 from .jwks import JWK, JWKSet
 
@@ -16,6 +30,10 @@ __all__ = [
     "RS256",
     "RS384",
     "RS512",
+    "ES256",
+    "ES384",
+    "ES512",
+    "EdDSA",
     "Algorithm",
     "ALGORITHMS",
     "JWT",

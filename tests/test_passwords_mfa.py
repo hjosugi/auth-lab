@@ -1,7 +1,19 @@
+import sys
 import unittest
+from types import SimpleNamespace
+from unittest.mock import patch
 
 from authlab.mfa import RecoveryCodes, TOTP, hotp, totp
-from authlab.passwords import PasswordHasher, Pbkdf2Params, ScryptParams
+from authlab.passwords import hasher as password_hasher
+from authlab.passwords import (
+    ARGON2_BACKEND,
+    Argon2Params,
+    PasswordHasher,
+    Pbkdf2Params,
+    ScryptParams,
+    parse_hash,
+)
+from authlab.passwords.argon2 import TYPE_D, TYPE_I, TYPE_ID, Argon2Error, argon2
 from authlab.util.clock import FrozenClock
 
 
@@ -45,6 +57,86 @@ class TestPasswordHasher(unittest.TestCase):
 
     def test_malformed_hash(self):
         self.assertFalse(self.hasher.verify("x", "not-a-hash"))
+
+
+class TestArgon2(unittest.TestCase):
+    """RFC vectors plus the password-storage integration around the primitive."""
+
+    # RFC 9106 sections 5.1-5.3. A self-roundtrip would only prove that our
+    # encoder and verifier share the same bug; these published tags prove
+    # compatibility with independent implementations.
+    RFC9106_TAGS = {
+        TYPE_D: "512b391b6f1162975371d30919734294f868e3be3984f3c1a13a4db9fabe4acb",
+        TYPE_I: "c814d9d1dc7f37aa13f0d77f2494bda1c8de6b016dd388d29952a4c4672b6ce8",
+        TYPE_ID: "0d640df58d78766c08c037a34a8b53c9d01ef0452d75b65eb52520e96b01e659",
+    }
+
+    def test_rfc9106_vectors(self):
+        for variant, expected in self.RFC9106_TAGS.items():
+            with self.subTest(variant=variant):
+                tag = argon2(
+                    b"\x01" * 32,
+                    b"\x02" * 16,
+                    time_cost=3,
+                    memory_cost=32,
+                    parallelism=4,
+                    tag_length=32,
+                    variant=variant,
+                    secret=b"\x03" * 8,
+                    associated_data=b"\x04" * 12,
+                )
+                self.assertEqual(tag.hex(), expected)
+
+    def test_argon2id_phc_roundtrip_and_wrong_password(self):
+        hasher = PasswordHasher(Argon2Params.teaching())
+        stored = hasher.hash("correct horse", salt=b"\x02" * 16)
+        parsed = parse_hash(stored)
+        self.assertEqual(parsed.algorithm, "argon2id")
+        self.assertEqual(parsed.version, 19)
+        self.assertEqual(parsed.params, "m=64,t=2,p=1")
+        self.assertTrue(hasher.verify("correct horse", stored))
+        self.assertFalse(hasher.verify("wrong battery", stored))
+        self.assertFalse(hasher.needs_rehash(stored))
+
+    def test_parameter_tampering_breaks_the_tag(self):
+        hasher = PasswordHasher(Argon2Params.teaching())
+        stored = hasher.hash("secret", salt=b"\x02" * 16)
+        self.assertFalse(hasher.verify("secret", stored.replace("t=2", "t=1", 1)))
+
+    def test_version_field_is_argon2_only(self):
+        with self.assertRaises(ValueError):
+            parse_hash("$scrypt$v=19$n=16384,r=8,p=1$AA$AA")
+
+    def test_pure_backend_refuses_production_cost(self):
+        if ARGON2_BACKEND != "pure":
+            self.skipTest("argon2-cffi is installed, so the native backend owns production cost")
+        with self.assertRaises(Argon2Error):
+            Argon2Params().derive(b"password", b"\x02" * 16)
+
+    def test_fake_verify_uses_argon2_cost(self):
+        hasher = PasswordHasher(Argon2Params.teaching(memory_cost=32, time_cost=1))
+        self.assertFalse(hasher.fake_verify("unknown user password"))
+
+    def test_optional_cffi_backend_selects_argon2id(self):
+        called = {}
+
+        def hash_secret_raw(**kwargs):
+            called.update(kwargs)
+            return b"\xaa" * kwargs["hash_len"]
+
+        fake_argon2 = SimpleNamespace(
+            low_level=SimpleNamespace(
+                Type={"ID": "native-id", "I": "native-i", "D": "native-d"},
+                hash_secret_raw=hash_secret_raw,
+            )
+        )
+        with (
+            patch.object(password_hasher, "ARGON2_BACKEND", "cffi"),
+            patch.dict(sys.modules, {"argon2": fake_argon2}),
+        ):
+            result = Argon2Params.teaching().derive(b"password", b"\x02" * 16)
+        self.assertEqual(called["type"], "native-id")
+        self.assertEqual(result, b"\xaa" * 32)
 
 
 class TestHOTP(unittest.TestCase):

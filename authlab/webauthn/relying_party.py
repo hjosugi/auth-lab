@@ -36,15 +36,43 @@ from typing import Any
 
 from ..crypto.cbor import decode as cbor_decode
 from ..crypto.ec import ECPublicKey, ecdsa_verify, signature_from_der
+from ..crypto.ed25519 import Ed25519PublicKey, ed25519_verify
 from ..util.clock import Clock, SystemClock
 from ..util.ct import constant_time_equals, random_bytes
 from ..util.encoding import b64u_decode, b64u_encode
 from .authenticator import FLAG_AT, FLAG_BE, FLAG_BS, FLAG_UP, FLAG_UV
-from .cose import cose_decode_ec2
+from .cose import (
+    COSE_EDDSA,
+    COSE_ES256,
+    SUPPORTED_ALGORITHMS,
+    cose_decode_public_key,
+)
+
+CredentialPublicKey = ECPublicKey | Ed25519PublicKey
 
 
 class WebAuthnError(Exception):
     """Any ceremony failure."""
+
+
+def verify_credential_signature(
+    public_key: CredentialPublicKey, signed: bytes, signature: bytes
+) -> bool:
+    """Verify an authenticator signature against the key type we stored.
+
+    The algorithm comes from the stored credential, never from the assertion.
+    That is the WebAuthn form of the JWS `alg` lesson: if the RP read the
+    algorithm out of the message it is checking, an attacker would get to pick
+    it.
+    """
+    if isinstance(public_key, Ed25519PublicKey):
+        # RFC 8032 signatures are fixed-length raw bytes, not DER.
+        return ed25519_verify(public_key, signed, signature)
+    try:
+        parsed = signature_from_der(signature)
+    except Exception as exc:  # noqa: BLE001
+        raise WebAuthnError(f"malformed signature: {exc}") from exc
+    return ecdsa_verify(public_key, signed, parsed)
 
 
 @dataclass
@@ -52,13 +80,18 @@ class RegisteredCredential:
     """What the RP stores. Note there is no secret here."""
 
     credential_id: bytes
-    public_key: ECPublicKey
+    public_key: CredentialPublicKey
     user_handle: bytes
     sign_count: int
     aaguid: bytes = b""
     backup_eligible: bool = False
     backup_state: bool = False
     transports: list[str] = field(default_factory=list)
+
+    @property
+    def algorithm(self) -> int:
+        """The COSE algorithm this credential is pinned to."""
+        return COSE_EDDSA if isinstance(self.public_key, Ed25519PublicKey) else COSE_ES256
 
 
 @dataclass
@@ -165,7 +198,10 @@ class RelyingParty:
             "rp": {"id": self.rp_id, "name": self.rp_name},
             "user": {"id": b64u_encode(user_handle), "name": username, "displayName": username},
             "challenge": b64u_encode(challenge),
-            "pubKeyCredParams": [{"type": "public-key", "alg": -7}],  # ES256
+            "pubKeyCredParams": [
+                {"type": "public-key", "alg": algorithm}
+                for algorithm in SUPPORTED_ALGORITHMS
+            ],
             "timeout": self.challenge_ttl * 1000,
             "attestation": "none",
             "authenticatorSelection": {
@@ -280,7 +316,7 @@ class RelyingParty:
             raise WebAuthnError("registration response carries no attested credential data")
 
         try:
-            public_key = cose_decode_ec2(parsed.cose_key)
+            public_key = cose_decode_public_key(parsed.cose_key)
         except ValueError as exc:
             raise WebAuthnError(f"unusable credential public key: {exc}") from exc
 
@@ -319,7 +355,7 @@ class RelyingParty:
 
     def _verify_packed_attestation(
         self, attestation: dict, parsed: ParsedAuthenticatorData,
-        client_data_json: bytes, public_key: ECPublicKey,
+        client_data_json: bytes, public_key: CredentialPublicKey,
     ) -> None:
         """Self-attestation only: signed by the credential key itself."""
         statement = attestation["attStmt"]
@@ -328,14 +364,15 @@ class RelyingParty:
             # means checking the chain against the FIDO Metadata Service, which
             # is an enterprise requirement and out of scope here.
             raise WebAuthnError("x5c attestation is not supported by this RP")
-        if statement.get("alg") != -7:
+        expected_alg = COSE_EDDSA if isinstance(public_key, Ed25519PublicKey) else COSE_ES256
+        if statement.get("alg") != expected_alg:
+            # Self-attestation is signed by the credential key, so the stated
+            # alg must match the key we just decoded. A mismatch is either a
+            # broken authenticator or an attempt to get us to run the wrong
+            # verifier.
             raise WebAuthnError(f"unsupported attestation alg: {statement.get('alg')!r}")
         signed = attestation["authData"] + hashlib.sha256(client_data_json).digest()
-        try:
-            signature = signature_from_der(statement["sig"])
-        except Exception as exc:  # noqa: BLE001
-            raise WebAuthnError(f"malformed attestation signature: {exc}") from exc
-        if not ecdsa_verify(public_key, signed, signature):
+        if not verify_credential_signature(public_key, signed, statement["sig"]):
             raise WebAuthnError("attestation signature does not verify")
 
     # ------------------------------------------------------------------
@@ -365,11 +402,7 @@ class RelyingParty:
 
         # The signature covers authenticatorData || SHA-256(clientDataJSON).
         signed = response["authenticatorData"] + hashlib.sha256(response["clientDataJSON"]).digest()
-        try:
-            signature = signature_from_der(response["signature"])
-        except Exception as exc:  # noqa: BLE001
-            raise WebAuthnError(f"malformed signature: {exc}") from exc
-        if not ecdsa_verify(record.public_key, signed, signature):
+        if not verify_credential_signature(record.public_key, signed, response["signature"]):
             raise WebAuthnError("assertion signature does not verify")
 
         self._check_sign_count(record, parsed)

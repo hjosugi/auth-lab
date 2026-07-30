@@ -27,7 +27,10 @@ def run(label: str, argv: list[str]) -> bool:
 
 def main() -> int:
     results = []
-    results.append(run("unittest suite (108 tests)",
+    # No hardcoded test count here: the number moves every time a protocol
+    # gains a negative test, and a stale number in the banner is worse than
+    # no number. unittest prints the real count itself.
+    results.append(run("unittest suite",
                        [sys.executable, "-m", "unittest", "discover", "-s", "tests"]))
     results.append(run("drills (run_all)", [sys.executable, "drills/run_all.py"]))
     results.append(run("attack regressions", [sys.executable, "attacks/run_regressions.py"]))

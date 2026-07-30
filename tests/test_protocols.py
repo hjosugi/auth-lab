@@ -6,6 +6,7 @@ from urllib.parse import parse_qsl, urlsplit
 from xml.etree import ElementTree as ET
 
 from authlab.crypto import generate_rsa_keypair
+from authlab.crypto.ed25519 import Ed25519PublicKey
 from authlab.crypto.x509 import CertificateAuthority
 from authlab.directory import LDAP, SCIMServer, SCIMError, escape_filter
 from authlab.kerberos import KDC, KerberizedService, KerberosClient, KerberosError
@@ -14,7 +15,13 @@ from authlab.saml import IdentityProvider, ServiceProvider, SAMLError
 from authlab.saml.protocol import SAML
 from authlab.util.clock import FrozenClock
 from authlab.util.encoding import b64u_decode
-from authlab.webauthn import RelyingParty, VirtualAuthenticator, WebAuthnError
+from authlab.webauthn import (
+    COSE_EDDSA,
+    RelyingParty,
+    VirtualAuthenticator,
+    WebAuthnError,
+    cose_decode_public_key,
+)
 
 
 class TestSAML(unittest.TestCase):
@@ -103,6 +110,75 @@ class TestWebAuthn(unittest.TestCase):
         self.rp.verify_authentication("s5", self._login("s5"))
         with self.assertRaises(WebAuthnError):
             self.rp.verify_authentication("s4", cloned)
+
+
+class TestWebAuthnEdDSA(unittest.TestCase):
+    """COSE alg -8. Same ceremony, different key type and signature format."""
+
+    def setUp(self):
+        self.clock = FrozenClock(1_700_000_000)
+        self.rp = RelyingParty(rp_id="lab.local", origins=["https://lab.local"], clock=self.clock)
+        self.auth = VirtualAuthenticator(algorithm=COSE_EDDSA)
+        self.uh = b"user-ed"
+        options = self.rp.registration_options("s1", self.uh, "erin")
+        self.cred = self.auth.make_credential(
+            rp_id="lab.local", origin="https://lab.local",
+            challenge=b64u_decode(options["challenge"]), user_handle=self.uh,
+            attestation="packed",
+        )
+        self.record = self.rp.verify_registration("s1", self.cred, self.uh)
+
+    def test_registration_stores_an_ed25519_key(self):
+        self.assertIsInstance(self.record.public_key, Ed25519PublicKey)
+        self.assertEqual(self.record.algorithm, COSE_EDDSA)
+
+    def test_registration_options_advertise_eddsa(self):
+        options = self.rp.registration_options("options", self.uh, "erin")
+        self.assertEqual(
+            [entry["alg"] for entry in options["pubKeyCredParams"]],
+            [-7, COSE_EDDSA],
+        )
+
+    def test_login(self):
+        options = self.rp.authentication_options("s2", self.uh)
+        assertion = self.auth.get_assertion(
+            rp_id="lab.local", origin="https://lab.local",
+            challenge=b64u_decode(options["challenge"]),
+        )
+        # Ed25519 assertions are raw 64-byte signatures, not DER.
+        self.assertEqual(len(assertion["response"]["signature"]), 64)
+        self.assertEqual(self.rp.verify_authentication("s2", assertion).sign_count, 1)
+
+    def test_origin_mismatch_still_rejected(self):
+        options = self.rp.authentication_options("s3", self.uh)
+        assertion = self.auth.get_assertion(
+            rp_id="lab.local", origin="https://evil.local",
+            challenge=b64u_decode(options["challenge"]),
+        )
+        with self.assertRaises(WebAuthnError):
+            self.rp.verify_authentication("s3", assertion)
+
+    def test_tampered_signature_rejected(self):
+        options = self.rp.authentication_options("s4", self.uh)
+        assertion = self.auth.get_assertion(
+            rp_id="lab.local", origin="https://lab.local",
+            challenge=b64u_decode(options["challenge"]),
+        )
+        signature = bytearray(assertion["response"]["signature"])
+        signature[0] ^= 0x01
+        assertion["response"]["signature"] = bytes(signature)
+        with self.assertRaises(WebAuthnError):
+            self.rp.verify_authentication("s4", assertion)
+
+    def test_x25519_key_is_refused(self):
+        # crv=4 is X25519, which cannot sign. Accepting it would be a type
+        # confusion, not a missing feature.
+        with self.assertRaises(ValueError):
+            cose_decode_public_key({1: 1, 3: COSE_EDDSA, -1: 4, -2: b"\x00" * 32})
+
+    def test_attestation_alg_must_match_the_key(self):
+        with self.assertRaises(ValueError):
+            cose_decode_public_key({1: 1, 3: -7, -1: 6, -2: b"\x00" * 32})
 
 
 class TestKerberos(unittest.TestCase):

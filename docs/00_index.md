@@ -37,8 +37,8 @@ JWT デコード、TOTP 生成、PKCE、パスワードハッシュ、ReBAC チ�
 ```
 authlab/          実装本体（Python 標準ライブラリのみ、pip install 不要）
   util/           base64url, 定数時間比較, クロック
-  crypto/         RSA, ECDSA(P-256), AES, CBOR, X.509 CA
-  passwords/      scrypt/PBKDF2 パスワードハッシュ
+  crypto/         RSA, ECDSA(P-256/384/521), Ed25519, AES, CBOR, X.509 CA
+  passwords/      scrypt/PBKDF2/Argon2id パスワードハッシュ
   mfa/            HOTP/TOTP, リカバリコード
   jose/           JWS/JWT/JWKS
   oauth/          認可サーバ, リソースサーバ, クライアント, DPoP
@@ -51,7 +51,7 @@ authlab/          実装本体（Python 標準ライブラリのみ、pip instal
   server.py       curl で叩ける HTTP デモサーバ
 drills/           13本の自己検証ドリル（run_all.py で一括）
 attacks/          攻撃カタログ（素朴実装が破れる→authlabは防ぐ）
-tests/            108テスト（RFCベクタ含む）
+tests/            unittest（RFC 8032/6979/9106 ベクタ含む）
 docs/             このドキュメント + playground
 ```
 
@@ -60,7 +60,7 @@ docs/             このドキュメント + playground
 ```bash
 # 依存なし。Python 3.11+ 標準ライブラリのみ
 python drills/run_all.py                    # 全プロトコルが緑になるのを見る
-python -m unittest discover -s tests        # 108テスト
+python -m unittest discover -s tests        # 全unittest
 PYTHONPATH=. python attacks/catalog.py      # 攻撃カタログ
 python -m authlab.server                    # OAuth/OIDC サーバを起動 (:8080)
 ```
@@ -70,5 +70,8 @@ python -m authlab.server                    # OAuth/OIDC サーバを起動 (:80
 - **Spring Security を使わない**。使うと「動くけど中身が見えない」。
   トークンに触れる全ての行を読める状態にするため、あえて全部スクラッチ。
 - **検証可能**。RFC 4226/6238 の公式テストベクタ、FIPS-197、RFC 8949 に一致。
-  X.509 は `openssl verify` を通り、mTLS は本物の TLS ハンドシェイクで動く。
+  RFC 8032/6979/9106 の署名・KDFベクタにも一致する。X.509 は `openssl verify` を通り、
+  mTLS は本物の TLS ハンドシェイクで動く。
+- **依存なしを維持**。Argon2id は読み解くための低コスト純Python経路を持つ。
+  本番コストを使う場合だけ `argon2-cffi` を任意で利用し、未導入でもラボ全体は動く。
 - **攻撃を実演する**。「防げる」と書くだけでなく、素朴な実装で破ってから authlab で防ぐ。

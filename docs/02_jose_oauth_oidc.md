@@ -37,6 +37,43 @@ BASE64URL(header) . BASE64URL(payload) . BASE64URL(signature)
 > 示す。トークン自身の jwk を信じるのはバイパスだが、検証済みトークンの thumbprint に対して
 > proof の jwk を照合するのは設計そのもの。
 
+### 署名アルゴリズム表
+
+実装: [`authlab/jose/jws.py`](../authlab/jose/jws.py) の `ALGORITHMS`。
+
+| alg | 種別 | 鍵型 (JWK `kty`) | 曲線 / 鍵 | ハッシュ | 署名長 | 備考 |
+|-----|------|------------------|-----------|----------|--------|------|
+| HS256/384/512 | HMAC | `oct` | 共有秘密 | SHA-256/384/512 | 32/48/64B | 検証者＝発行者になれる。マルチテナントでは使わない |
+| RS256/384/512 | RSASSA-PKCS1-v1_5 | `RSA` | 2048bit 以上 | SHA-256/384/512 | 鍵長と同じ (256B) | 最も普及。署名が大きい |
+| ES256 | ECDSA | `EC` | **P-256** | SHA-256 | 64B (R‖S 各32B) | passkey/WebAuthn の既定 |
+| ES384 | ECDSA | `EC` | **P-384** | SHA-384 | 96B (各48B) | |
+| ES512 | ECDSA | `EC` | **P-521** | SHA-512 | 132B (各66B) | **名前はハッシュ由来。P-512 という曲線は存在しない** |
+| EdDSA | Ed25519 | `OKP` | Ed25519 | SHA-512 (内部) | 64B | RFC 8037。曲線は `crv` 側にあるので alg は1つだけ |
+
+**ES\* で必ず踏む落とし穴 — 署名エンコーディングが2種類ある。**
+JOSE は固定長の生 `R‖S`（RFC 7518 §3.4）、X.509 と WebAuthn は可変長の
+DER `SEQUENCE{INTEGER r, INTEGER s}`。DER は r/s の最上位ビットが立つと
+`0x00` が前置されるので長さが署名ごとに変わる。passkey バックエンドの
+「署名が検証できない」の大半はこの変換漏れ。変換は
+[`signature_to_raw` / `signature_to_der`](../authlab/crypto/ec.py) にある。
+
+**曲線は alg に固定されている。** `ES384` ヘッダに P-256 鍵、は仕様違反であり、
+本実装は `Algorithm._require_curve` で拒否する。JWKS 側でも `crv` と座標長の
+一致を検証する（P-521 と称して48バイト座標、は破損か曲線混同のどちらか）。
+
+**なぜ EdDSA が増えているか。** ECDSA の危険な部分は署名ごとのノンス `k` で、
+再利用すると秘密鍵が落ちる（PS3 の署名鍵、Android RNG バグ時代の Bitcoin ウォレット）。
+EdDSA はノンスを `SHA-512(prefix ‖ message)` として導出するので、署名経路に RNG が
+存在しない。さらにメッセージを**公開鍵ごと**ハッシュするため、署名を別の鍵に
+付け替える duplicate-signature key substitution も塞がっている。
+本実装は [`authlab/crypto/ed25519.py`](../authlab/crypto/ed25519.py)（RFC 8032 準拠、
+テストベクタ一致）。32バイトなら何でも公開鍵として受けるのではなく、canonical な曲線点か、
+素数位数の署名部分群に属するかも検証する。恒等点のような小位数鍵を許すと、検証式から
+メッセージと公開鍵の束縛が消えるためである。
+
+> 注意: ECDSA へ RFC 6979 の決定的ノンスを後付けしたのが `crypto/ec.py` の
+> `_rfc6979_k`。EdDSA は最初からそう設計されている、という差。
+
 ### クレーム検証（署名は簡単な方の半分）
 
 - `iss`: どの AS が発行したか。無いと信頼する任意の IdP のトークンが全サービスで通る。
