@@ -4,7 +4,7 @@ Authentication answers "who are you". Authorization answers "may you". They
 fail in different ways and are usually written by different people, which is
 why the second one is where the bugs live.
 
-Three models, in increasing order of what they can express:
+Five policy views, compared on the same access matrix:
 
   RBAC  -- permissions attach to roles, roles attach to users.
            "Editors may publish articles."
@@ -18,6 +18,8 @@ Three models, in increasing order of what they can express:
            of it, or a member of a group that is an editor, or you can view
            its parent folder."
            This is what Google Drive, GitHub, and Notion actually need.
+  Cedar -- permit/forbid policies over typed entities and relationships.
+  Rego  -- declarative rules over structured input and data.
 
 Most real systems are RBAC for coarse things, ABAC for conditions, and ReBAC
 for anything with sharing or hierarchy. They compose; they are not rivals.
@@ -39,6 +41,27 @@ from .abac import (
     time_between,
 )
 from .rebac import ReBAC, Tuple, Namespace, Relation, Userset
+from .policy_comparison import (
+    ABACAdapter,
+    AccessRequest,
+    CANONICAL_CASES,
+    CEDAR_POLICY,
+    CedarAdapter,
+    ComparisonDecision,
+    DecisionLogEntry,
+    ListObjectsResult,
+    PolicyComparison,
+    PolicyDataset,
+    PrivacyPreservingDecisionLog,
+    RBACAdapter,
+    REGO_POLICY,
+    ReBACAdapter,
+    RegoAdapter,
+    RelationshipResolution,
+    Resource,
+    Subject,
+    canonical_dataset,
+)
 
 __all__ = [
     "Role",
@@ -61,4 +84,23 @@ __all__ = [
     "Namespace",
     "Relation",
     "Userset",
+    "ABACAdapter",
+    "AccessRequest",
+    "CANONICAL_CASES",
+    "CEDAR_POLICY",
+    "CedarAdapter",
+    "ComparisonDecision",
+    "DecisionLogEntry",
+    "ListObjectsResult",
+    "PolicyComparison",
+    "PolicyDataset",
+    "PrivacyPreservingDecisionLog",
+    "RBACAdapter",
+    "REGO_POLICY",
+    "ReBACAdapter",
+    "RegoAdapter",
+    "RelationshipResolution",
+    "Resource",
+    "Subject",
+    "canonical_dataset",
 ]

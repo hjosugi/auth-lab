@@ -59,6 +59,10 @@ auth-lab を作るのに実際に参照した一次情報と、学習に使え�
 
 ### 認可
 - [Google Zanzibar 論文](https://research.google/pubs/pub48190/) — ReBAC の原典
+- [Cedar Authorization](https://docs.cedarpolicy.com/auth/authorization.html) — default-deny、forbid-overrides-permit、診断情報
+- [Cedar Policy Syntax](https://docs.cedarpolicy.com/policies/syntax-policy.html) — `permit` / `forbid` とentity hierarchy
+- [OPA Policy Language](https://www.openpolicyagent.org/docs/policy-language) — Regoのinput/data/rule
+- [OPA Graph Built-ins](https://www.openpolicyagent.org/docs/policy-reference/builtins/graph) — nested groupに使う`graph.reachable`
 - [X.509 / RFC 5280](https://datatracker.ietf.org/doc/html/rfc5280)
 
 ## 学習に使える良サイト

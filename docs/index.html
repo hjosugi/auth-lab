@@ -23,7 +23,7 @@
   <button class="tab-btn" onclick="showTab('t-oauth', this)">OAuth / OIDC</button>
   <button class="tab-btn" onclick="showTab('t-pkce', this)">PKCE</button>
   <button class="tab-btn" onclick="showTab('t-passwords', this)">Passwords</button>
-  <button class="tab-btn" onclick="showTab('t-authz', this)">RBAC/ABAC/ReBAC</button>
+  <button class="tab-btn" onclick="showTab('t-authz', this)">Authorization × 5</button>
   <button class="tab-btn" onclick="showTab('t-diagrams', this)">Diagrams</button>
   <button class="tab-btn" onclick="showTab('t-protocols', this)">SAML·Kerberos·WebAuthn…</button>
   <button class="tab-btn" onclick="showTab('t-attacks', this)">Attacks</button>
@@ -45,7 +45,7 @@
       <tr><td>Federation</td><td>Let one system vouch for you to another</td><td>OIDC, SAML, Kerberos</td></tr>
       <tr><td>Token</td><td>Carry the proof around</td><td>JWT/JOSE, JWKS, DPoP, opaque tokens + introspection</td></tr>
       <tr><td>Delegation</td><td>Let an app act for you, scoped</td><td>OAuth 2.0 + Security BCP (code+PKCE, refresh, client credentials, device)</td></tr>
-      <tr><td>Authorization</td><td>Decide if this action is allowed</td><td>RBAC, ABAC, ReBAC (Zanzibar)</td></tr>
+      <tr><td>Authorization</td><td>Decide if this action is allowed</td><td>RBAC, ABAC, ReBAC, Cedar, Rego</td></tr>
       <tr><td>Provisioning</td><td>Create / disable accounts across systems</td><td>SCIM, LDAP</td></tr>
     </table>
   </div>
@@ -266,12 +266,36 @@ typ: at+jwt</div>
 
 <!-- ================= AUTHZ ================= -->
 <section id="t-authz" class="tab-panel">
-  <h2>Authorization models</h2>
-  <p class="lead">RBAC for coarse roles, ABAC for conditions, ReBAC for anything with sharing or hierarchy. They compose; they are not rivals.</p>
+  <h2>認可モデルを同じ問いで比較する</h2>
+  <p class="lead">RBAC / ABAC / ReBAC / Cedar / Rego に同じ subject・action・resource を渡し、tenant境界、owner、nested group、explicit denyの答えと理由を比較します。</p>
+
+  <div class="card demo">
+    <h3>5モデル decision parity</h3>
+    <p><code>platform ⊂ eng</code>、budgetのownerはbob、lockedはownerでも拒否、red-planは別tenantです。</p>
+    <label>シナリオ</label>
+    <select id="policy-scenario" onchange="policyParityDemo()">
+      <option value="nested-group-read">alice / read / budget — nested group</option>
+      <option value="group-cannot-write">alice / write / budget — reader cannot write</option>
+      <option value="owner-write">bob / write / budget — owner</option>
+      <option value="explicit-deny-owner">bob / read / locked — deny beats owner</option>
+      <option value="tenant-admin">root / write / budget — tenant admin</option>
+      <option value="tenant-boundary">root / read / red-plan — cross tenant</option>
+      <option value="default-deny">mallory / read / budget — default deny</option>
+      <option value="other-tenant-owner">carol / write / red-plan — owner in red</option>
+    </select>
+    <div class="out" id="policy-query"></div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr><th>model</th><th>decision</th><th>reason</th></tr></thead>
+        <tbody id="policy-results"></tbody>
+      </table>
+    </div>
+    <div class="note">Cedar / Rego 行は、掲載したpolicy sourceと同じ意味を標準ライブラリだけで実行するsemantic adapterです。Cedar runtimeやOPAを内蔵したという意味ではありません。Python側のテストが同じ8ケースのparityを固定します。</div>
+  </div>
 
   <div class="card demo">
     <h3>ReBAC (Zanzibar) live check</h3>
-    <p>A Google-Drive-style model: documents live in folders, folders have viewers, groups can be nested. This engine mirrors <code>authlab/authz/rebac.py</code>.</p>
+    <p>文書、親フォルダ、nested groupを関係タプルだけで辿ります。このengineは<code>authlab/authz/rebac.py</code>と同じuserset rewriteを使います。</p>
     <div class="out mono" style="font-size:12px">group:eng#member@user:alice
 group:eng#member@group:platform#member
 group:platform#member@user:carol
@@ -294,8 +318,9 @@ document:budget#owner@user:erin</div>
   </div>
 
   <div class="card">
-    <h3>The one thing RBAC cannot say</h3>
-    <p><code>orders:read</code> means "may read orders". It says nothing about <i>whose</i>. The moment a requirement contains "their own", you need ABAC or ReBAC — and skipping that step is how you ship <b>BOLA/IDOR</b>, the #1 API security risk. Scope is not authorization.</p>
+    <h3>RBACだけでは「自分の」を言えない</h3>
+    <p><code>orders:read</code>は「注文を読める」であり、<em>誰の注文か</em>を表しません。「自分の」が要件に出たらABAC/ReBAC等のobject境界が必要です。ここをscopeだけで済ませると<b>BOLA/IDOR</b>になります。</p>
+    <p><a href="08_authz.md">性能・整合性、cycle/depth、decision log privacyを含む詳細解説</a></p>
   </div>
 </section>
 

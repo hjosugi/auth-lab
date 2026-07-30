@@ -113,6 +113,23 @@ class TestReBAC(unittest.TestCase):
         self.z.write("group:platform#member@group:eng#member")
         self.assertFalse(self.z.check("document:budget", "viewer", "user:mallory"))
 
+    def test_expand_reports_cycle(self):
+        self.z.write("group:platform#member@group:eng#member")
+        expanded = self.z.expand("group:eng", "member")
+        self.assertIn('"type": "cycle"', __import__("json").dumps(expanded))
+
+    def test_configurable_depth_limit(self):
+        from authlab.authz import ReBAC
+
+        engine = ReBAC(max_depth=1)
+        engine.namespace("group").relation("member")
+        engine.write(
+            "group:a#member@group:b#member",
+            "group:b#member@group:c#member",
+            "group:c#member@user:alice",
+        )
+        self.assertFalse(engine.check("group:a", "member", "user:alice"))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -313,8 +313,96 @@ function flowPrev() { if (flowIdx > 0) flowIdx--; renderFlow(); }
 function flowReset() { flowIdx = 0; renderFlow(); }
 
 /* ------------------------------------------------------------------ */
-/* 7. Authorization models: RBAC / ABAC / ReBAC                       */
+/* 7. Authorization models: RBAC / ABAC / ReBAC / Cedar / Rego        */
 /* ------------------------------------------------------------------ */
+
+const policySubjects = {
+  alice: { tenant: "blue", groups: ["platform"], admin: false },
+  bob: { tenant: "blue", groups: [], admin: false },
+  root: { tenant: "blue", groups: [], admin: true },
+  carol: { tenant: "red", groups: [], admin: false },
+  mallory: { tenant: "blue", groups: [], admin: false },
+};
+const policyResources = {
+  budget: { tenant: "blue", owner: "bob", readerGroup: "eng", locked: false },
+  locked: { tenant: "blue", owner: "bob", readerGroup: "eng", locked: true },
+  "red-plan": { tenant: "red", owner: "carol", readerGroup: "eng", locked: false },
+};
+const policyGroupParents = { platform: ["eng"] };
+const policyCases = {
+  "nested-group-read": ["alice", "read", "budget"],
+  "group-cannot-write": ["alice", "write", "budget"],
+  "owner-write": ["bob", "write", "budget"],
+  "explicit-deny-owner": ["bob", "read", "locked"],
+  "tenant-admin": ["root", "write", "budget"],
+  "tenant-boundary": ["root", "read", "red-plan"],
+  "default-deny": ["mallory", "read", "budget"],
+  "other-tenant-owner": ["carol", "write", "red-plan"],
+};
+
+function policyInGroup(subject, target, maxDepth) {
+  const pending = subject.groups.map(group => [group, 0, new Set()]);
+  while (pending.length) {
+    const [group, depth, path] = pending.pop();
+    if (path.has(group) || depth > maxDepth) continue;
+    if (group === target) return true;
+    const nextPath = new Set(path);
+    nextPath.add(group);
+    for (const parent of policyGroupParents[group] || []) {
+      pending.push([parent, depth + 1, nextPath]);
+    }
+  }
+  return false;
+}
+
+function policyGuard(subject, resource) {
+  if (subject.tenant !== resource.tenant) return "tenant boundary";
+  if (resource.locked) return "explicit deny: locked";
+  return "";
+}
+
+function policyPermit(subjectId, action, resourceId) {
+  const subject = policySubjects[subjectId];
+  const resource = policyResources[resourceId];
+  if (!["read", "write"].includes(action)) return "";
+  if (subject.admin) return "tenant admin";
+  if (resource.owner === subjectId) return "owner";
+  if (action === "read" && policyInGroup(subject, resource.readerGroup, 25)) {
+    return "platform → eng nested group";
+  }
+  return "";
+}
+
+function policyParityDemo() {
+  const select = document.getElementById("policy-scenario");
+  if (!select) return;
+  const [subjectId, action, resourceId] = policyCases[select.value];
+  const subject = policySubjects[subjectId];
+  const resource = policyResources[resourceId];
+  const guard = policyGuard(subject, resource);
+  const permit = policyPermit(subjectId, action, resourceId);
+  const allowed = !guard && Boolean(permit);
+  const modelReasons = {
+    RBAC: guard || (permit ? `materialized resource role: ${permit}` : "default deny"),
+    ABAC: guard || (permit ? `deny-overrides attribute policy: ${permit}` : "default deny"),
+    ReBAC: guard || (permit ? `relationship path: ${permit}` : "no relation path"),
+    Cedar: guard
+      ? `forbid overrides permit: ${guard}`
+      : (permit ? `permit: ${permit}` : "default deny"),
+    Rego: guard
+      ? `deny; allow requires not deny: ${guard}`
+      : (permit ? `permit and not deny: ${permit}` : "default allow := false"),
+  };
+
+  document.getElementById("policy-query").textContent =
+    `check(subject=${subjectId}, action=${action}, resource=${resourceId})`;
+  document.getElementById("policy-results").innerHTML =
+    Object.entries(modelReasons).map(([model, reason]) =>
+      `<tr><td><code>${model}</code></td>` +
+      `<td><span class="${allowed ? "good" : "bad"}">${allowed ? "ALLOW" : "DENY"}</span></td>` +
+      `<td>${reason}</td></tr>`
+    ).join("");
+}
 
 // ReBAC mini-engine mirroring authlab.authz.rebac (this + computed + tuple_to_userset)
 function rebacDemo() {
@@ -414,6 +502,7 @@ function showTab(id, btn) {
 document.addEventListener("DOMContentLoaded", () => {
   if (document.getElementById("flow-steps")) renderFlow();
   if (document.getElementById("jwt-input")) decodeJwt();
+  if (document.getElementById("policy-scenario")) policyParityDemo();
   // report Web Crypto availability
   const badge = document.getElementById("crypto-badge");
   if (badge) badge.textContent = crypto && crypto.subtle ? "Web Crypto: available ✓" : "Web Crypto: unavailable (use https or localhost)";

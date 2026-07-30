@@ -1,4 +1,4 @@
-"""Drill 08 -- RBAC vs ABAC vs ReBAC on the same question."""
+"""Drill 08 -- five authorization models on the same question."""
 
 from __future__ import annotations
 
@@ -10,6 +10,11 @@ from authlab.authz import (
     Effect,
     Policy,
     RBAC,
+    AccessRequest,
+    CANONICAL_CASES,
+    PolicyComparison,
+    PrivacyPreservingDecisionLog,
+    canonical_dataset,
     all_of,
     attr_equals,
     attr_lte,
@@ -74,6 +79,37 @@ def main() -> None:
                 "mallory has no path and is denied")
     note(f"alice can view: {z.list_objects('user:alice', 'viewer', 'document')}")
     note(f"budget viewers: {z.list_users('document:budget', 'viewer')}")
+
+    step(4, "5モデル: 同じ判定行列で parity と list-objects のコストを確認する。")
+    comparison = PolicyComparison(canonical_dataset())
+    for case_name, (request, expected) in CANONICAL_CASES.items():
+        actual = comparison.require_parity(request)
+        assert_true(actual == expected, f"{case_name}: all five models agree")
+    results = comparison.list_objects_all("alice", "read")
+    assert_true(
+        {result.object_ids for result in results.values()} == {("budget",)},
+        "all five list-objects queries return the same snapshot",
+    )
+    for model, result in results.items():
+        note(
+            f"{model}: candidates={result.candidate_checks}, "
+            f"elapsed_ns={result.elapsed_ns}, {result.strategy}"
+        )
+
+    request = AccessRequest("bob", "read", "locked")
+    decision = comparison.decide_all(request)["Cedar"]
+    logger = PrivacyPreservingDecisionLog(b"drill-only-secret-material")
+    entry = logger.record(
+        decision,
+        request,
+        occurred_at=1_700_000_000,
+        context={"request_id": "req-1", "email": "must-not-be-stored@example.test"},
+    )
+    assert_true("bob" not in str(entry.to_dict()), "subject id is pseudonymized")
+    assert_true(
+        "must-not-be-stored" not in str(entry.to_dict()),
+        "arbitrary context is excluded from the decision log",
+    )
 
     print("\nDrill 08 complete.")
 

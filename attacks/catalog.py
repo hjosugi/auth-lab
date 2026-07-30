@@ -15,6 +15,7 @@ import sys
 import time
 from urllib.parse import parse_qsl, urlsplit
 
+from authlab.authz import CANONICAL_CASES, PolicyComparison, canonical_dataset
 from authlab.crypto import generate_rsa_keypair
 from authlab.jose import HS256, JWK, JWKSet, JWS, JWT, JWTValidator, RS256
 from authlab.oauth import AuthorizationServer, Client, OAuthClient, ResourceServer, User, pkce
@@ -261,6 +262,35 @@ def attack_bola(clock) -> None:
 
 
 # ---------------------------------------------------------------------------
+# 32 + 33: policy-composition bypasses
+# ---------------------------------------------------------------------------
+
+def attack_policy_composition() -> None:
+    comparison = PolicyComparison(canonical_dataset())
+
+    header(32, "cross-tenant relationship grant")
+    naive(
+        "a graph-only check sees root's broad role/relation and skips the "
+        "subject-resource tenant boundary"
+    )
+    tenant_request, _ = CANONICAL_CASES["tenant-boundary"]
+    tenant_decisions = comparison.decide_all(tenant_request)
+    if all(not decision.allowed for decision in tenant_decisions.values()):
+        defended("all five adapters reject before a grant can cross tenants")
+    else:
+        defended("BUG: at least one model accepted")
+
+    header(33, "explicit deny bypass by owner")
+    naive("an allow-only evaluator returns immediately when owner == subject")
+    locked_request, _ = CANONICAL_CASES["explicit-deny-owner"]
+    locked_decisions = comparison.decide_all(locked_request)
+    if all(not decision.allowed for decision in locked_decisions.values()):
+        defended("deny/forbid overrides every matching owner permit")
+    else:
+        defended("BUG: at least one model accepted")
+
+
+# ---------------------------------------------------------------------------
 # 14: user enumeration by timing
 # ---------------------------------------------------------------------------
 
@@ -311,6 +341,7 @@ def main() -> None:
     attack_refresh_replay(clock)
     attack_idtoken_as_access(clock)
     attack_bola(clock)
+    attack_policy_composition()
     attack_user_enumeration()
     print("\nSAML XML signature wrapping and LDAP injection are demonstrated in")
     print("drills 09 and 13 respectively (they need more setup than fits here).")

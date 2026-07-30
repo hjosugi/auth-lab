@@ -25,7 +25,7 @@
 ## ▶ ブラウザで試す
 
 **[playground](https://hjosugi.github.io/auth-lab/)** — JWT デコード/署名/検証、ライブ TOTP
-生成、PKCE、パスワードハッシュ、ReBAC チェック、`alg=none` 攻撃などを、**ブラウザ内で
+生成、PKCE、パスワードハッシュ、5認可モデル比較、`alg=none` 攻撃などを、**ブラウザ内で
 本物の暗号処理**（Web Crypto API）で動かせる。インストール不要、通信も一切なし。
 
 > GitHub Pages は `.github/workflows/pages.yml` が `docs/` を自動デプロイする。
@@ -45,7 +45,7 @@
 | Enterprise SSO | Kerberos AS/TGS/service | pre-auth、ticket、authenticator、clock skew、4大AD攻撃 |
 | Passwordless | WebAuthn / passkeys、COSE | challenge、origin、RP ID、UP/UV、counter |
 | Directory | LDAP、SCIM | bind/search escaping、匿名bind対策、provision/deprovision |
-| Authorization | RBAC、ABAC、ReBAC | role 継承、deny-overrides、userset rewrite |
+| Authorization | RBAC、ABAC、ReBAC、Cedar、Rego | decision parity、tenant/deny、cycle/depth、privacy-safe logs |
 | Crypto | RSA、ECDSA(P-256)、AES、CBOR、X.509 CA | FIPS-197 KAT、RFC 8949、`openssl verify` 通過 |
 
 ## 5分で動かす
@@ -89,7 +89,7 @@ flowchart TD
     Z --> R["Protected Resource"]
     I["IdP / Authorization Server"] --> C
     D["LDAP / SCIM / HR"] --> I
-    P["RBAC / ABAC / ReBAC"] --> Z
+    P["RBAC / ABAC / ReBAC / Cedar / Rego"] --> Z
 ```
 
 認証は「誰か」を確かめ、認可は「何をしてよいか」を判断する。OAuth は認証プロトコルでは
