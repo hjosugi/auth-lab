@@ -27,6 +27,7 @@ from authlab.oauth import (
     Unauthorized, User, pkce,
 )
 from authlab.oauth.resource_server import Forbidden
+from authlab.authz import CANONICAL_CASES, PolicyComparison, canonical_dataset
 from authlab.util.clock import FrozenClock
 from authlab.util.encoding import b64u_decode, int_to_bytes, json_b64u
 
@@ -123,6 +124,24 @@ def main() -> int:
     claims = rs.authenticate(f"Bearer {at}")
     must_reject("insufficient scope", lambda: rs.require_scope(claims, "admin"))
     must_reject("BOLA (another user's object)", lambda: rs.require_ownership(claims, "u-bob"))
+
+    print("Authorization policy comparison:")
+    comparison = PolicyComparison(canonical_dataset())
+
+    def require_all_allow(case_name: str) -> None:
+        request, _ = CANONICAL_CASES[case_name]
+        decisions = comparison.decide_all(request)
+        if any(not decision.allowed for decision in decisions.values()):
+            raise Forbidden(case_name)
+
+    must_reject(
+        "cross-tenant relationship grant",
+        lambda: require_all_allow("tenant-boundary"),
+    )
+    must_reject(
+        "explicit deny bypass by resource owner",
+        lambda: require_all_allow("explicit-deny-owner"),
+    )
 
     print("Advanced OAuth:")
     server.register_client(Client(

@@ -39,6 +39,10 @@
 | 29 | CIBA `auth_req_id`取り違え / 過剰poll | 認証フロー混同 | CWE-294 | A07:2021 | client・期限・承認へ束縛し、intervalと単回使用を強制 | `oauth/ciba.py` |
 | 30 | FAPI Bearer / public-client downgrade | token再利用 | CWE-287 | API2:2023 | confidential client、PAR、S256、短命code、mTLS/DPoPを一体で強制 | `oauth/fapi2_security.py` |
 | 31 | signed introspectionをaccess tokenとして使用 | JWT型混同 | CWE-843 | API2:2023 | 専用`typ`と`token_introspection` claim、`iss`/`aud`を検証 | `oauth/fapi2_message_signing.py` |
+| 32 | cross-tenant relationによる境界越え | 認可欠陥 | CWE-863 | API1:2023 | relation grantより先にsubject/resourceのtenant一致を必須化 | `authz/policy_comparison.py` |
+| 33 | owner/adminによるexplicit deny迂回 | 認可欠陥 | CWE-863 | API5:2023 | deny-overrides / forbid-overrides-permitを全モデルで固定 | `authz/policy_comparison.py` |
+| 34 | relationship graphの循環・過深度 | DoS / 認可不整合 | CWE-674 | API4:2023 | path-local cycle検知と設定可能なdepth上限 | `authz/rebac.py`, `authz/policy_comparison.py` |
+| 35 | decision logへの識別子・policy input漏洩 | 情報漏洩 | CWE-532 | API8:2023 | HMAC仮名化、field allowlist、期限付きretention | `authz/policy_comparison.py` |
 
 ## 使い方
 
@@ -51,6 +55,9 @@ python drills/11_webauthn.py               # 21, 22 を実演
 python -m unittest tests.test_saml_signature # 15 の正規化・方式差し替えnegative test
 python drills/14_advanced_oauth.py          # 25〜31 のbindingを実演
 python -m unittest tests.test_oauth_advanced # 25〜31 の正常系・negative test
+python drills/08_authz_models.py            # 32〜35 の5モデル比較
+python -m unittest tests.test_policy_comparison # 32〜35 のparity/negative test
+PYTHONPATH=. python attacks/run_regressions.py  # 32, 33 を含む拒否回帰
 ```
 
 ## 一番大事な一行

@@ -135,7 +135,10 @@ class Namespace:
 class ReBAC:
     """A tuple store with check / expand / list_objects."""
 
-    def __init__(self) -> None:
+    def __init__(self, max_depth: int = MAX_DEPTH) -> None:
+        if max_depth < 0:
+            raise ValueError("max_depth must be non-negative")
+        self.max_depth = max_depth
         self.namespaces: dict[str, Namespace] = {}
         self.tuples: set[Tuple] = set()
 
@@ -172,25 +175,36 @@ class ReBAC:
             if item.object == object_id and item.relation == relation:
                 yield item.user
 
-    def check(self, object_id: str, relation: str, user: str, _depth: int = 0,
-              _seen: set[tuple[str, str, str]] | None = None) -> bool:
+    def check(
+        self,
+        object_id: str,
+        relation: str,
+        user: str,
+        _depth: int = 0,
+        _seen: frozenset[tuple[str, str, str]] | set[tuple[str, str, str]] | None = None,
+    ) -> bool:
         """Is `user` in `relation` of `object_id`?"""
-        if _depth > MAX_DEPTH:
+        if _depth > self.max_depth:
             return False
-        seen = _seen if _seen is not None else set()
+        seen = frozenset(_seen or ())
         key = (object_id, relation, user)
         if key in seen:
             # Cycle in the group graph. Returning False rather than raising
             # keeps a badly shaped tuple set from taking the service down.
             return False
-        seen.add(key)
+        next_path = seen | {key}
         return self._check_userset(
-            self._rewrite_for(object_id, relation), object_id, relation, user, _depth, seen
+            self._rewrite_for(object_id, relation),
+            object_id,
+            relation,
+            user,
+            _depth,
+            next_path,
         )
 
     def _check_userset(
         self, rewrite: Userset, object_id: str, relation: str, user: str,
-        depth: int, seen: set[tuple[str, str, str]],
+        depth: int, seen: frozenset[tuple[str, str, str]],
     ) -> bool:
         if rewrite.kind == "union":
             return any(
@@ -227,20 +241,41 @@ class ReBAC:
 
         return False
 
-    def expand(self, object_id: str, relation: str, _depth: int = 0) -> dict:
+    def expand(
+        self,
+        object_id: str,
+        relation: str,
+        _depth: int = 0,
+        _path: frozenset[tuple[str, str]] | None = None,
+    ) -> dict:
         """The userset tree for a relation. This is what a sharing dialog shows."""
-        if _depth > MAX_DEPTH:
+        if _depth > self.max_depth:
             return {"type": "depth_limit"}
+        path = _path or frozenset()
+        key = (object_id, relation)
+        if key in path:
+            return {"type": "cycle", "at": f"{object_id}#{relation}"}
         return self._expand_userset(
-            self._rewrite_for(object_id, relation), object_id, relation, _depth
+            self._rewrite_for(object_id, relation),
+            object_id,
+            relation,
+            _depth,
+            path | {key},
         )
 
-    def _expand_userset(self, rewrite: Userset, object_id: str, relation: str, depth: int) -> dict:
+    def _expand_userset(
+        self,
+        rewrite: Userset,
+        object_id: str,
+        relation: str,
+        depth: int,
+        path: frozenset[tuple[str, str]],
+    ) -> dict:
         if rewrite.kind == "union":
             return {
                 "type": "union",
                 "children": [
-                    self._expand_userset(child, object_id, relation, depth)
+                    self._expand_userset(child, object_id, relation, depth, path)
                     for child in rewrite.children
                 ],
             }
@@ -252,7 +287,9 @@ class ReBAC:
                     sets.append(
                         {
                             "userset": candidate,
-                            "expanded": self.expand(sub_object, sub_relation, depth + 1),
+                            "expanded": self.expand(
+                                sub_object, sub_relation, depth + 1, path
+                            ),
                         }
                     )
                 else:
@@ -263,7 +300,9 @@ class ReBAC:
             return {
                 "type": "computed_userset",
                 "from": rewrite.relation,
-                "expanded": self.expand(object_id, rewrite.relation or "", depth + 1),
+                "expanded": self.expand(
+                    object_id, rewrite.relation or "", depth + 1, path
+                ),
             }
         if rewrite.kind == "tuple_to_userset":
             branches = []
@@ -272,7 +311,9 @@ class ReBAC:
                 branches.append(
                     {
                         "via": f"{object_id}#{rewrite.tupleset_relation}@{parent}",
-                        "expanded": self.expand(target, rewrite.relation or "", depth + 1),
+                        "expanded": self.expand(
+                            target, rewrite.relation or "", depth + 1, path
+                        ),
                     }
                 )
             return {"type": "tuple_to_userset", "branches": branches}

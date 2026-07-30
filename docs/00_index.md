@@ -6,7 +6,7 @@
 ## ブラウザで試す
 
 [**GitHub Pages の playground**](https://hjosugi.github.io/auth-lab/) —
-JWT デコード、TOTP 生成、PKCE、パスワードハッシュ、ReBAC チェックなどを
+JWT デコード、TOTP 生成、PKCE、パスワードハッシュ、5認可モデル比較などを
 **ブラウザ内で本物の暗号処理**（Web Crypto API）で動かせる。ローカルでも
 `docs/index.html` を開けば動く。
 
@@ -20,7 +20,7 @@ JWT デコード、TOTP 生成、PKCE、パスワードハッシュ、ReBAC チ�
 - [05 - WebAuthn / passkeys](05_webauthn.md)
 - [06 - mTLS と DPoP（送信者制約）](06_mtls_dpop.md)
 - [07 - LDAP と SCIM](07_ldap_scim.md)
-- [08 - 認可モデル: RBAC / ABAC / ReBAC](08_authz.md)
+- [08 - 認可モデル: RBAC / ABAC / ReBAC / Cedar / Rego](08_authz.md)
 - [14 - 高度な OAuth: PAR / JAR / JARM / RAR / CIBA / FAPI 2.0](14_advanced_oauth_fapi.md)
 
 ### 図で見る
@@ -48,7 +48,7 @@ authlab/          実装本体（Python 標準ライブラリのみ、pip instal
   webauthn/       認証器, リライングパーティ, COSE
   mtls/           相互TLS（本物のTLSハンドシェイク）
   directory/      LDAP, SCIM
-  authz/          RBAC, ABAC, ReBAC
+  authz/          RBAC, ABAC, ReBAC, Cedar/Rego semantic comparison
   server.py       curl で叩ける HTTP デモサーバ
 drills/           14本の自己検証ドリル（run_all.py で一括）
 attacks/          攻撃カタログ（素朴実装が破れる→authlabは防ぐ）
