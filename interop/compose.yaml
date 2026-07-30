@@ -1,0 +1,65 @@
+name: authlab-interop
+
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.7.0
+    command: ["start-dev", "--import-realm", "--http-port=8080"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: fixture-admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: fixture-only-admin-password
+      JAVA_OPTS_KC_HEAP: "-XX:MaxRAMPercentage=65"
+    mem_limit: 768m
+    volumes:
+      - "./keycloak/auth-lab-interop-realm.json:/opt/keycloak/data/import/auth-lab-interop-realm.json:ro"
+    networks: [interop]
+
+  openldap:
+    build:
+      context: ./openldap
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          ldapsearch -x -H ldap://127.0.0.1:1389
+          -D uid=learner,ou=people,dc=auth-lab,dc=local
+          -w fixture-only-password
+          -b dc=auth-lab,dc=local uid=learner >/dev/null
+      interval: 2s
+      timeout: 2s
+      retries: 30
+    networks: [interop]
+
+  kerberos:
+    build:
+      context: ./kerberos
+    hostname: kerberos
+    healthcheck:
+      test: ["CMD-SHELL", "kadmin.local -q 'getprinc learner@AUTH-LAB.LOCAL' >/dev/null"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+    networks: [interop]
+
+  runner:
+    build:
+      context: .
+      dockerfile: runner/Dockerfile
+    working_dir: /workspace
+    command:
+      - python
+      - scripts/run_interop.py
+      - --inside
+      - --trace
+      - /evidence/trace.jsonl
+    environment:
+      AUTHLAB_KEYCLOAK_URL: http://keycloak:8080/realms/auth-lab-interop
+      AUTHLAB_INTEROP_INSIDE: "1"
+    volumes:
+      - "../:/workspace:ro"
+      - "../.tmp/interop:/evidence"
+    networks: [interop]
+
+networks:
+  interop:
+    driver: bridge
+    internal: true

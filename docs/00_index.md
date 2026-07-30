@@ -40,6 +40,7 @@ OAuth/SAML/Kerberos/WebAuthnの日英sequence、ブラウザ標準の passkey �
 - [13 - 参考サイト・仕様一覧](13_references.md)
 - [15 - Property / fuzz / protocol-state conformance](15_property_fuzz.md)
 - [16 - Pyodide browser Python REPL](16_pyodide.md)
+- [実製品 interoperability profile](interoperability.md) — Keycloak / OpenLDAP / MIT Kerberosのlocal-only成功・拒否検証
 
 ## リポジトリ構成
 
@@ -63,6 +64,7 @@ drills/           14本の自己検証ドリル（run_all.py で一括）
 attacks/          攻撃カタログ（素朴実装が破れる→authlabは防ぐ）
 tests/            unittest（RFC 8032/6979/9106 ベクタ含む）
 docs/             このドキュメント + playground
+interop/          local-only実製品fixture（Keycloak / OpenLDAP / MIT Kerberos）
 ```
 
 ## 動かし方

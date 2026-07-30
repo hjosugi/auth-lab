@@ -1,0 +1,80 @@
+{
+  "realm": "auth-lab-interop",
+  "enabled": true,
+  "displayName": "auth-lab fixture interoperability realm",
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "resetPasswordAllowed": false,
+  "loginWithEmailAllowed": false,
+  "users": [
+    {
+      "username": "learner",
+      "enabled": true,
+      "email": "learner@auth-lab.local",
+      "emailVerified": true,
+      "firstName": "Fixture",
+      "lastName": "Learner",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "fixture-only-password",
+          "temporary": false
+        }
+      ]
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "authlab-oidc",
+      "name": "auth-lab fixture OIDC client",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "fixture-only-client-secret",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "http://127.0.0.1:18090/oidc/callback"
+      ],
+      "webOrigins": [
+        "http://127.0.0.1:18090"
+      ],
+      "defaultClientScopes": [
+        "web-origins",
+        "acr",
+        "roles",
+        "profile",
+        "email"
+      ],
+      "optionalClientScopes": [
+        "address",
+        "phone",
+        "offline_access",
+        "microprofile-jwt"
+      ]
+    },
+    {
+      "clientId": "authlab-saml",
+      "name": "auth-lab fixture SAML service provider",
+      "enabled": true,
+      "protocol": "saml",
+      "publicClient": true,
+      "baseUrl": "http://127.0.0.1:18090/saml/acs",
+      "redirectUris": [
+        "http://127.0.0.1:18090/saml/acs"
+      ],
+      "attributes": {
+        "saml_idp_initiated_sso_url_name": "authlab-saml",
+        "saml_assertion_consumer_url_post": "http://127.0.0.1:18090/saml/acs",
+        "saml.authnstatement": "true",
+        "saml.client.signature": "false",
+        "saml.assertion.signature": "true",
+        "saml.server.signature": "false",
+        "saml.force.post.binding": "true",
+        "saml.onetimeuse.condition": "true",
+        "saml_name_id_format": "username"
+      }
+    }
+  ]
+}

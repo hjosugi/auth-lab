@@ -51,6 +51,8 @@ jobs:
           node --test tests/browser/*.test.js
       - name: Verify native WebAuthn with a virtual authenticator
         run: node tests/browser/webauthn-e2e.mjs
+      - name: Verify interoperability Pages explorer
+        run: node tests/browser/interop-gui-e2e.mjs
       - name: Build browser Python source bundle
         run: python scripts/build_pyodide_bundle.py --output .tmp/pyodide/authlab-pyodide.zip
       - name: Verify real authlab Python in Pyodide

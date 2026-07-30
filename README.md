@@ -11,6 +11,7 @@
 [14日学習計画](docs/11_14day_plan.md) /
 [プロトコル解説](docs/00_index.md) /
 [攻撃対応表](docs/09_attack_matrix.md) /
+[実製品interop](docs/interoperability.md) /
 [参考資料](docs/13_references.md) /
 [GitHub Issues](https://github.com/hjosugi/auth-lab/issues)
 
@@ -63,6 +64,7 @@ python scripts/verify.py             # テスト + ドリル + 攻撃回帰 + pr
 python scripts/run_property_fuzz.py  # 固定seedの有界property/fuzz campaign
 python drills/run_all.py             # 14本のドリルが全部緑になるのを見る
 python attacks/run_regressions.py    # 危険な入力がすべて拒否されるのを確認
+python scripts/run_interop.py --start # optional: 実製品4 protocolの成功/拒否
 ```
 
 期待結果:
@@ -114,6 +116,7 @@ drills/        14本の実行可能ドリル（run_all.py で一括）
 attacks/       よくある設計ミスを拒否できるかの回帰（catalog.py / run_regressions.py）
 docs/          図解・日本語解説・Spring対応表・面接スクリプト・ブラウザ Playground(index.html)
 spring-companion/ Java 21 / Spring SecurityによるOIDC・resource server・method security写経
+interop/       localhost限定のKeycloak・OpenLDAP・MIT Kerberos fixture
 scripts/       一括検証(verify.py)と配布ZIP生成(make_zip.py)
 ```
 
@@ -136,6 +139,7 @@ scripts/       一括検証(verify.py)と配布ZIP生成(make_zip.py)
 - [攻撃対応表（CWE/OWASP）](docs/09_attack_matrix.md) · [Spring Security 対応表](docs/10_spring_security_map.md)
 - [Java 21 / Spring Security companion](spring-companion/README.md) — OIDC、JWT/opaque、method security、脅威モデル
 - [Property / fuzz / protocol-state conformance](docs/15_property_fuzz.md)
+- [Keycloak / OpenLDAP / MIT Kerberos interoperability](docs/interoperability.md)
 - [14日ドリル計画](docs/11_14day_plan.md) · [面接用スクリプト（英語）](docs/12_interview_english.md) · [参考サイト・仕様一覧](docs/13_references.md)
 
 ## ライセンス

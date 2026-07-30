@@ -1,0 +1,20 @@
+dn: dc=auth-lab,dc=local
+objectClass: top
+objectClass: domain
+dc: auth-lab
+
+dn: ou=people,dc=auth-lab,dc=local
+objectClass: top
+objectClass: organizationalUnit
+ou: people
+
+dn: uid=learner,ou=people,dc=auth-lab,dc=local
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+uid: learner
+cn: Fixture Learner
+sn: Learner
+mail: learner@auth-lab.local
+userPassword: fixture-only-password
