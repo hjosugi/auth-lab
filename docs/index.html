@@ -19,6 +19,7 @@
 <nav class="tabs" role="tablist" aria-label="auth-lab playground">
   <button class="tab-btn active" role="tab" aria-selected="true" aria-controls="t-start" data-tab-target="t-start" onclick="showTab('t-start', this)">Start here</button>
   <button class="tab-btn" role="tab" aria-selected="false" aria-controls="t-sequences" data-tab-target="t-sequences" tabindex="-1" onclick="showTab('t-sequences', this)">Flows × 4 / 日英</button>
+  <button class="tab-btn" role="tab" aria-selected="false" aria-controls="t-interop" data-tab-target="t-interop" tabindex="-1" onclick="showTab('t-interop', this)">Real interop × 4</button>
   <button class="tab-btn" role="tab" aria-selected="false" aria-controls="t-jwt" data-tab-target="t-jwt" tabindex="-1" onclick="showTab('t-jwt', this)">JWT</button>
   <button class="tab-btn" role="tab" aria-selected="false" aria-controls="t-totp" data-tab-target="t-totp" tabindex="-1" onclick="showTab('t-totp', this)">TOTP / MFA</button>
   <button class="tab-btn" role="tab" aria-selected="false" aria-controls="t-oauth" data-tab-target="t-oauth" tabindex="-1" onclick="showTab('t-oauth', this)">OAuth / OIDC</button>
@@ -137,6 +138,58 @@ python drills/run_all.py          # watch every protocol run green</div>
       <span class="sequence-progress" id="sequence-progress" role="status"></span>
     </div>
     <div class="note">Keyboard: <span class="kbd">←</span>/<span class="kbd">→</span>で1message移動、<span class="kbd">Home</span>で先頭、<span class="kbd">End</span>で末尾。OSのreduced motion設定を尊重します。</div>
+  </div>
+</section>
+
+<!-- ================= INTEROPERABILITY ================= -->
+<section id="t-interop" class="tab-panel">
+  <h2>実製品とのinteroperability</h2>
+  <p class="lead">教材実装の検証項目を、Keycloak・OpenLDAP・MIT Kerberosの実際のwire flowへ対応付けます。成功だけでなく、誤ったcredentialが拒否されるところまで自動検査します。</p>
+
+  <div class="card interop-boundary">
+    <h3>Pagesとlocal fixtureの境界</h3>
+    <p><b>このPages上ではDockerを起動しません。</b> ブラウザへcredentialやtokenを持ち込まず、公開ページでは検証内容だけを安全に観察します。実製品との通信はloopback bindと内部Docker networkに閉じたfixtureで実行してください。</p>
+    <div class="out mono">python scripts/run_interop.py --start
+# OIDC · SAML · LDAP · Kerberos の成功/拒否を検査
+# redacted trace: .tmp/interop/trace.jsonl</div>
+    <div class="interop-links">
+      <a class="act" href="interoperability.md">実行手順と対応表</a>
+      <a class="act ghost" href="https://github.com/hjosugi/auth-lab/actions/workflows/interop.yml">実製品CIを見る</a>
+    </div>
+  </div>
+
+  <div class="interop-topology" aria-label="local browser and runner connect through loopback to three containers on an internal network">
+    <div><span>CONTROL</span><b>interop runner</b><small>stdlib Python</small></div>
+    <span class="interop-arrow" aria-hidden="true">loopback <span class="interop-arrowhead">→</span></span>
+    <div><span>FEDERATION</span><b>Keycloak</b><small>OIDC + SAML</small></div>
+    <div><span>DIRECTORY</span><b>OpenLDAP</b><small>bind + search</small></div>
+    <div><span>TICKETS</span><b>MIT Kerberos</b><small>AS + TGS</small></div>
+  </div>
+
+  <div class="card demo interop-explorer">
+    <div class="grid2">
+      <div>
+        <label for="interop-protocol">確認するprotocol</label>
+        <select id="interop-protocol">
+          <option value="oidc">OpenID Connect</option>
+          <option value="saml">SAML 2.0</option>
+          <option value="ldap">LDAP</option>
+          <option value="kerberos">Kerberos v5</option>
+        </select>
+      </div>
+      <div class="interop-product-card">
+        <span>REAL IMPLEMENTATION</span>
+        <strong id="interop-product" aria-live="polite"></strong>
+      </div>
+    </div>
+    <h3>Wire flow</h3>
+    <ol id="interop-wire" class="interop-wire"></ol>
+    <dl class="interop-evidence">
+      <div><dt>authlabとの検証binding</dt><dd id="interop-bindings"></dd></div>
+      <div><dt>negative evidence</dt><dd id="interop-negative"></dd></div>
+      <div><dt>source mapping</dt><dd id="interop-source"></dd></div>
+    </dl>
+    <div class="note">Traceにはprotocol・scenario・PASS/REJECTEDと検証済みbindingだけを保存します。password、client secret、JWT、SAML assertionは保存も表示もしません。</div>
   </div>
 </section>
 
@@ -732,6 +785,7 @@ document:budget#owner@user:erin</div>
 </footer>
 
 <script src="assets/sequences.js"></script>
+<script src="assets/interoperability.js"></script>
 <script src="assets/webauthn-lab.js"></script>
 <script src="assets/pyodide-policy.js"></script>
 <script src="assets/pyodide-lab.js"></script>
