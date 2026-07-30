@@ -29,6 +29,6 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: real-product-interop-redacted-evidence
-          path: .tmp/interop/trace.jsonl
+          path: .tmp/interop
           if-no-files-found: error
           retention-days: 14

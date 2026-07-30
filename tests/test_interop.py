@@ -54,6 +54,14 @@ class TestInteropTrace(unittest.TestCase):
             self.assertNotIn(FIXTURE_PASSWORD, document)
             self.assertEqual(json.loads(document)["status"], "PASS")
 
+    def test_failure_message_is_redacted_before_serialization(self):
+        result = redact(
+            f"request password={FIXTURE_PASSWORD} "
+            "token=eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ4In0.signature"
+        )
+        self.assertNotIn(FIXTURE_PASSWORD, result)
+        self.assertNotIn("eyJhbGci", result)
+
 
 class TestInteropParsing(unittest.TestCase):
     def test_html_forms_preserve_hidden_protocol_state(self):

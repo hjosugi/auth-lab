@@ -85,8 +85,9 @@ protocol、scenario、`PASS` / `REJECTED`、検証済みbindingだけです。
 - SAML Response / Assertion
 - compact JWTに見える3 segmentの値
 
-runner自身もtokenやassertionを標準出力へ出しません。失敗時はexceptionの型だけを表示し、
-詳細はcontainer logへ自動転記しません。
+runner自身もtokenやassertionを標準出力へ出しません。失敗時のmessageとdiagnostic
+artifactにも同じmaskを適用し、container statusと末尾logだけを
+`.tmp/interop/diagnostics.txt` に保存します。
 
 ## GitHub Actionsでの実製品検証
 

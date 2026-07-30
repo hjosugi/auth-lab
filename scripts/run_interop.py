@@ -93,6 +93,19 @@ class Trace:
             stream.write(json.dumps(event, ensure_ascii=False, sort_keys=True) + "\n")
         print(f"[interop] {protocol:<8} {scenario:<18} {status}")
 
+    def preserve_diagnostics(self) -> None:
+        """Keep sanitized container state for a failed CI run."""
+        sections: list[str] = []
+        for label, arguments in (
+            ("compose ps", ("ps", "--all")),
+            ("compose logs", ("logs", "--no-color", "--tail", "120")),
+        ):
+            result = compose(*arguments, check=False)
+            output = "\n".join(part for part in (result.stdout, result.stderr) if part.strip())
+            sections.append(f"## {label}\n{redact(output)}")
+        diagnostics = self.path.with_name("diagnostics.txt")
+        diagnostics.write_text("\n\n".join(sections) + "\n", encoding="utf-8")
+
 
 @dataclass
 class HTMLForm:
@@ -479,15 +492,24 @@ def main() -> int:
     try:
         if arguments.start:
             print("[interop] building and starting local-only fixtures")
+            started = True
             result = compose("up", "--build", "-d", check=False)
             if result.returncode != 0:
                 sanitized = redact(result.stderr.strip())
                 raise RuntimeError(f"Docker Compose startup failed: {sanitized}")
-            started = True
         run(trace)
     except Exception as exc:  # noqa: BLE001 - CLI reporting boundary
-        trace.record("profile", "complete", "FAIL", error=type(exc).__name__)
-        print(f"[interop] FAIL: {type(exc).__name__}", file=sys.stderr)
+        safe_message = redact(str(exc))
+        trace.record(
+            "profile",
+            "complete",
+            "FAIL",
+            error=type(exc).__name__,
+            message=safe_message,
+        )
+        if started:
+            trace.preserve_diagnostics()
+        print(f"[interop] FAIL: {type(exc).__name__}: {safe_message}", file=sys.stderr)
         return 1
     finally:
         if started and not arguments.keep:
