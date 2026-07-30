@@ -27,12 +27,14 @@
 **[playground](https://hjosugi.github.io/auth-lab/)** — JWT デコード/署名/検証、ライブ TOTP
 生成、PKCE、パスワードハッシュ、5認可モデル比較、OAuth/SAML/Kerberos/WebAuthnの
 日英sequence、ブラウザ標準の passkey 登録・認証、`alg=none` 攻撃などを、
-**ブラウザ内で本物の暗号処理**（Web Crypto / WebAuthn API）で動かせる。
+**ブラウザ内で本物の暗号処理**（Web Crypto / WebAuthn API）で動かせる。Python REPL
+タブでは Pyodide の WebAssembly CPython 上で、このリポジトリの `authlab/` 自体を実行する。
 WebAuthn 教材 RP は credential データを外部システムへ送らない。
 
 > GitHub Pages は `.github/workflows/pages.yml` が `docs/` を自動デプロイする。
 > ネイティブ WebAuthn は secure context が必要。ローカルでは
-> `python -m http.server -d docs 8000` を実行し、`http://localhost:8000/` を開く。
+> `python scripts/build_pyodide_bundle.py`、`python -m http.server -d docs 8000` の順に
+> 実行し、`http://localhost:8000/` を開く。
 
 ## 何が入っているか
 

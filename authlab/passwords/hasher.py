@@ -57,6 +57,40 @@ from ..util.encoding import b64u_encode, b64u_decode
 from ..util.ct import constant_time_equals, random_bytes
 
 
+def _pbkdf2_hmac(
+    hash_name: str,
+    password: bytes,
+    salt: bytes,
+    iterations: int,
+    dklen: int,
+) -> bytes:
+    """Use the native PBKDF2 binding, with a readable WebAssembly fallback."""
+    native = getattr(hashlib, "pbkdf2_hmac", None)
+    if callable(native):
+        return native(hash_name, password, salt, iterations, dklen)
+    if iterations < 1:
+        raise ValueError("PBKDF2 iterations must be positive")
+    digest_size = hashlib.new(hash_name).digest_size
+    if dklen < 1 or dklen > (2**32 - 1) * digest_size:
+        raise ValueError("invalid PBKDF2 derived-key length")
+
+    output = bytearray()
+    block_count = (dklen + digest_size - 1) // digest_size
+    for block_index in range(1, block_count + 1):
+        value = hmac.new(
+            password,
+            salt + block_index.to_bytes(4, "big"),
+            hash_name,
+        ).digest()
+        accumulated = bytearray(value)
+        for _ in range(1, iterations):
+            value = hmac.new(password, value, hash_name).digest()
+            for index, octet in enumerate(value):
+                accumulated[index] ^= octet
+        output.extend(accumulated)
+    return bytes(output[:dklen])
+
+
 @dataclass(frozen=True)
 class ScryptParams:
     """scrypt cost parameters (RFC 7914).
@@ -104,7 +138,13 @@ class Pbkdf2Params:
         return f"i={self.iterations},h={self.hash_name}"
 
     def derive(self, password: bytes, salt: bytes) -> bytes:
-        return hashlib.pbkdf2_hmac(self.hash_name, password, salt, self.iterations, self.dklen)
+        return _pbkdf2_hmac(
+            self.hash_name,
+            password,
+            salt,
+            self.iterations,
+            self.dklen,
+        )
 
 
 def _argon2_backend() -> str:
@@ -403,7 +443,13 @@ class PasswordHasher:
         return False
 
 
-# A precomputed hash of a random string, used by fake_verify. It is generated
-# once at import with the default parameters so the timing matches a real
-# lookup. If you raise the default cost, this rises with it.
-DUMMY_HASH = PasswordHasher().hash("!! account-does-not-exist !!", salt=b"\x00" * 16)
+# A structurally valid default-cost hash used by fake_verify. Keeping the
+# digest synthetic avoids running a costly KDF merely to import the module,
+# while verification still performs exactly the configured scrypt work.
+_DUMMY_PARAMS = ScryptParams()
+DUMMY_HASH = PasswordHash(
+    algorithm=_DUMMY_PARAMS.name,
+    params=_DUMMY_PARAMS.encode(),
+    salt=b"\x00" * 16,
+    digest=b"\x00" * _DUMMY_PARAMS.dklen,
+).encode()

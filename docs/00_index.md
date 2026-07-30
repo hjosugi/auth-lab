@@ -8,8 +8,10 @@
 [**GitHub Pages の playground**](https://hjosugi.github.io/auth-lab/) —
 JWT デコード、TOTP 生成、PKCE、パスワードハッシュ、5認可モデル比較、
 OAuth/SAML/Kerberos/WebAuthnの日英sequence、ブラウザ標準の passkey 登録・認証などを
-**ブラウザ内で本物の暗号処理**（Web Crypto / WebAuthn API）で動かせる。
+**ブラウザ内で本物の暗号処理**（Web Crypto / WebAuthn API）で動かせる。Python REPL
+タブでは、Pyodide 上で `authlab/` の実 Python source を直接実行できる。
 ネイティブ WebAuthn は secure context が必要なので、ローカルでは
+`python scripts/build_pyodide_bundle.py` で source bundle を作り、
 `python -m http.server -d docs 8000` を実行して `http://localhost:8000/` を開く。
 それ以外のデモは `docs/index.html` を直接開いても動く。
 
@@ -37,6 +39,7 @@ OAuth/SAML/Kerberos/WebAuthnの日英sequence、ブラウザ標準の passkey �
 - [12 - 面接用スクリプト（英語）](12_interview_english.md)
 - [13 - 参考サイト・仕様一覧](13_references.md)
 - [15 - Property / fuzz / protocol-state conformance](15_property_fuzz.md)
+- [16 - Pyodide browser Python REPL](16_pyodide.md)
 
 ## リポジトリ構成
 

@@ -11,25 +11,26 @@
 
 <header class="hero">
   <h1>🔐 auth-lab</h1>
-  <p>A from-scratch lab for authentication &amp; authorization. Every protocol below is implemented in pure Python (no dependencies) and, on this page, demonstrated with <b>real cryptography running in your browser</b> via the Web Crypto API.</p>
+  <p>A from-scratch lab for authentication &amp; authorization. Every protocol below is implemented in pure Python (no dependencies) and demonstrated with <b>real cryptography running in your browser</b> via Web Crypto, WebAuthn, and optional WebAssembly Python.</p>
   <p style="font-size:13px">認証・認可を「動かして」覚えるためのラボ。下のデモはすべてブラウザ内で本物の暗号処理を実行します。</p>
   <div class="badge" id="crypto-badge">Web Crypto: checking…</div>
 </header>
 
-<nav class="tabs">
-  <button class="tab-btn active" onclick="showTab('t-start', this)">Start here</button>
-  <button class="tab-btn" onclick="showTab('t-sequences', this)">Flows × 4 / 日英</button>
-  <button class="tab-btn" onclick="showTab('t-jwt', this)">JWT</button>
-  <button class="tab-btn" onclick="showTab('t-totp', this)">TOTP / MFA</button>
-  <button class="tab-btn" onclick="showTab('t-oauth', this)">OAuth / OIDC</button>
-  <button class="tab-btn" onclick="showTab('t-pkce', this)">PKCE</button>
-  <button class="tab-btn" onclick="showTab('t-passwords', this)">Passwords</button>
-  <button class="tab-btn" onclick="showTab('t-authz', this)">Authorization × 5</button>
-  <button class="tab-btn" onclick="showTab('t-diagrams', this)">Diagrams</button>
-  <button class="tab-btn" onclick="showTab('t-webauthn-native', this)">WebAuthn native</button>
-  <button class="tab-btn" onclick="showTab('t-protocols', this)">SAML·Kerberos·WebAuthn…</button>
-  <button class="tab-btn" onclick="showTab('t-attacks', this)">Attacks</button>
-  <button class="tab-btn" onclick="showTab('t-refs', this)">References</button>
+<nav class="tabs" role="tablist" aria-label="auth-lab playground">
+  <button class="tab-btn active" role="tab" aria-selected="true" aria-controls="t-start" data-tab-target="t-start" onclick="showTab('t-start', this)">Start here</button>
+  <button class="tab-btn" role="tab" aria-selected="false" aria-controls="t-sequences" data-tab-target="t-sequences" tabindex="-1" onclick="showTab('t-sequences', this)">Flows × 4 / 日英</button>
+  <button class="tab-btn" role="tab" aria-selected="false" aria-controls="t-jwt" data-tab-target="t-jwt" tabindex="-1" onclick="showTab('t-jwt', this)">JWT</button>
+  <button class="tab-btn" role="tab" aria-selected="false" aria-controls="t-totp" data-tab-target="t-totp" tabindex="-1" onclick="showTab('t-totp', this)">TOTP / MFA</button>
+  <button class="tab-btn" role="tab" aria-selected="false" aria-controls="t-oauth" data-tab-target="t-oauth" tabindex="-1" onclick="showTab('t-oauth', this)">OAuth / OIDC</button>
+  <button class="tab-btn" role="tab" aria-selected="false" aria-controls="t-pkce" data-tab-target="t-pkce" tabindex="-1" onclick="showTab('t-pkce', this)">PKCE</button>
+  <button class="tab-btn" role="tab" aria-selected="false" aria-controls="t-passwords" data-tab-target="t-passwords" tabindex="-1" onclick="showTab('t-passwords', this)">Passwords</button>
+  <button class="tab-btn" role="tab" aria-selected="false" aria-controls="t-authz" data-tab-target="t-authz" tabindex="-1" onclick="showTab('t-authz', this)">Authorization × 5</button>
+  <button class="tab-btn" role="tab" aria-selected="false" aria-controls="t-diagrams" data-tab-target="t-diagrams" tabindex="-1" onclick="showTab('t-diagrams', this)">Diagrams</button>
+  <button class="tab-btn" role="tab" aria-selected="false" aria-controls="t-webauthn-native" data-tab-target="t-webauthn-native" tabindex="-1" onclick="showTab('t-webauthn-native', this)">WebAuthn native</button>
+  <button class="tab-btn" role="tab" aria-selected="false" aria-controls="t-pyodide" data-tab-target="t-pyodide" tabindex="-1" onclick="showTab('t-pyodide', this)">Python REPL</button>
+  <button class="tab-btn" role="tab" aria-selected="false" aria-controls="t-protocols" data-tab-target="t-protocols" tabindex="-1" onclick="showTab('t-protocols', this)">SAML·Kerberos·WebAuthn…</button>
+  <button class="tab-btn" role="tab" aria-selected="false" aria-controls="t-attacks" data-tab-target="t-attacks" tabindex="-1" onclick="showTab('t-attacks', this)">Attacks</button>
+  <button class="tab-btn" role="tab" aria-selected="false" aria-controls="t-refs" data-tab-target="t-refs" tabindex="-1" onclick="showTab('t-refs', this)">References</button>
 </nav>
 
 <main>
@@ -548,6 +549,38 @@ document:budget#owner@user:erin</div>
   </div>
 </section>
 
+<!-- ================= PYODIDE ================= -->
+<section id="t-pyodide" class="tab-panel">
+  <h2>実 Python の authlab をブラウザで動かす</h2>
+  <p class="lead">既存の軽量 JavaScript デモはそのまま残し、このタブを開いたときだけ Pyodide と <code>authlab/</code> の source bundle を読み込みます。実行は Web Worker 内なので、UI と Python runtime を分離しています。</p>
+
+  <div class="card demo">
+    <h3>JWT 発行 → 改ざん → 拒否</h3>
+    <label for="pyodide-source">Python source</label>
+    <textarea id="pyodide-source" class="python-editor" spellcheck="false" aria-describedby="pyodide-help" aria-keyshortcuts="Control+Enter Meta+Enter"></textarea>
+    <p id="pyodide-help" class="note">コードはブラウザ内の WebAssembly Python で実行されます。<span class="kbd">Ctrl</span>+<span class="kbd">Enter</span>（macOS は ⌘+Enter）でも実行できます。fixture 以外の secret を貼り付けないでください。無限ループ時は worker をリセットできます。</p>
+    <div class="pyodide-actions" role="group" aria-label="Python runtime controls">
+      <button class="act ghost" id="pyodide-load" type="button">runtime を読み込む</button>
+      <button class="act" id="pyodide-run" type="button">実 Python を実行</button>
+      <button class="act ghost" id="pyodide-preset" type="button">JWT preset に戻す</button>
+      <button class="act danger" id="pyodide-reset" type="button">worker をリセット</button>
+    </div>
+    <div id="pyodide-status" class="out" role="status" aria-live="polite" aria-atomic="true">未読み込み。タブを開くか「runtime を読み込む」を押してください。</div>
+    <label for="pyodide-output">Python output</label>
+    <pre id="pyodide-output" class="out" aria-live="polite">まだ実行していません。</pre>
+  </div>
+
+  <div class="card">
+    <h3>ブラウザ互換性と本番境界</h3>
+    <ul class="tight">
+      <li><b>Password KDF:</b> 起動時に <code>hashlib.scrypt</code> を小さい fixture で確認し、利用できない build では authlab の純 Python PBKDF2-HMAC-SHA256 へ明示的に fallback します。結果は runtime status に表示します。</li>
+      <li><b>mTLS / socket:</b> ブラウザ WebAssembly には raw socket がないため、<code>socket</code>、<code>ssl</code>、<code>authlab.mtls</code> の import は実行前にガードします。実 TLS handshake はローカルで <code>python drills/12_mtls.py</code> を実行してください。</li>
+      <li><b>Teaching only:</b> browser sandbox は本番の認証境界ではありません。教材の純 Python 暗号は side-channel 耐性や適合認証を持たず、入力したコードは CPU/メモリを消費できます。</li>
+      <li><b>Network:</b> Pyodide runtime は version 固定の CDN から読み込みます。authlab source bundle と実行結果は同一 Pages origin とブラウザ内に留まります。</li>
+    </ul>
+  </div>
+</section>
+
 <!-- ================= PROTOCOLS ================= -->
 <section id="t-protocols" class="tab-panel">
   <h2>SAML · Kerberos · WebAuthn · mTLS · LDAP · SCIM · DPoP</h2>
@@ -694,12 +727,14 @@ document:budget#owner@user:erin</div>
 </main>
 
 <footer>
-  auth-lab — built from scratch on the Python standard library. All demos on this page run real cryptography locally in your browser; nothing is sent anywhere.<br>
+  auth-lab — built from scratch on the Python standard library. Credential data and execution results stay in your browser; optional Mermaid and Pyodide assets load from versioned CDNs.<br>
   <a href="https://github.com/hjosugi/auth-lab">github.com/hjosugi/auth-lab</a>
 </footer>
 
 <script src="assets/sequences.js"></script>
 <script src="assets/webauthn-lab.js"></script>
+<script src="assets/pyodide-policy.js"></script>
+<script src="assets/pyodide-lab.js"></script>
 <script src="assets/lab.js"></script>
 <script type="module">
   // Mermaid renders the Diagrams tab. Loaded from a CDN (GitHub Pages allows

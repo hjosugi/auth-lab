@@ -42,12 +42,29 @@ jobs:
       - name: Verify browser JavaScript
         run: |
           node --check docs/assets/lab.js
+          node --check docs/assets/pyodide-lab.js
+          node --check docs/assets/pyodide-policy.js
+          node --check docs/assets/pyodide-worker.js
           node --check docs/assets/sequences.js
           node --check docs/assets/webauthn-lab.js
           node --check site/app.js
           node --test tests/browser/*.test.js
       - name: Verify native WebAuthn with a virtual authenticator
         run: node tests/browser/webauthn-e2e.mjs
+      - name: Build browser Python source bundle
+        run: python scripts/build_pyodide_bundle.py --output .tmp/pyodide/authlab-pyodide.zip
+      - name: Verify real authlab Python in Pyodide
+        run: |
+          cp .tmp/pyodide/authlab-pyodide.zip docs/assets/authlab-pyodide.zip
+          node tests/browser/pyodide-e2e.mjs
+      - name: Preserve browser GUI evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: browser-gui-evidence
+          path: .tmp/browser-evidence
+          if-no-files-found: warn
+          retention-days: 14
       - name: Build learning bundle
         run: python scripts/build_zip.py
       - uses: actions/upload-artifact@v7

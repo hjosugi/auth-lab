@@ -16,9 +16,9 @@
 | [#4](https://github.com/hjosugi/auth-lab/issues/4) | Closed | CI | Actionsで全検証を実行、badgeを追加 |
 | [#5](https://github.com/hjosugi/auth-lab/issues/5) | Closed | SAML | exc-c14nと実IdP相互運用 |
 | [#6](https://github.com/hjosugi/auth-lab/issues/6) | Open | Interop | OAuth/LDAP/Kerberos/SAML container lab |
-| [#7](https://github.com/hjosugi/auth-lab/issues/7) | Open | Pages | Pyodideで実Pythonモジュールを実行 |
+| [#7](https://github.com/hjosugi/auth-lab/issues/7) | Closed | Pages | Pyodideで実Pythonモジュールを実行 |
 | [#8](https://github.com/hjosugi/auth-lab/issues/8) | Closed | OAuth | PAR/JAR/JARM/RAR/CIBA/FAPI 2.0 |
-| [#9](https://github.com/hjosugi/auth-lab/issues/9) | Open | WebAuthn | 実ブラウザpasskey E2E |
+| [#9](https://github.com/hjosugi/auth-lab/issues/9) | Closed | WebAuthn | 実ブラウザpasskey E2E |
 | [#10](https://github.com/hjosugi/auth-lab/issues/10) | Closed | Authz | Cedar/Rego/RBAC/ABAC/ReBAC比較 |
 | [#11](https://github.com/hjosugi/auth-lab/issues/11) | Closed | Crypto | Ed25519とES256のJOSE/WebAuthn対応 |
 | [#12](https://github.com/hjosugi/auth-lab/issues/12) | Closed | Testing | property/fuzz/conformance test |
@@ -120,3 +120,20 @@ success/negative testをJava 21で実行する。Pythonラボは引き続き依�
 - 各stepでasset、trust boundary、bindingを表示する。
 - keyboard操作、reduced motion、contrastを検証する。
 - narrationは日本語/英語で意味が一致する。
+
+## 8. Pyodide browser Python REPL
+
+**Goal:** Pagesから実際の`authlab/` Python sourceをWebAssembly CPythonで実行する。
+
+**実装:** [GitHub PagesのPython REPL](https://hjosugi.github.io/auth-lab/#t-pyodide) と
+[`docs/16_pyodide.md`](16_pyodide.md)。Pyodideはtab選択まで遅延ロードし、決定的な
+source-only ZIPをWeb Workerへ展開する。JWT正常/改ざん拒否を実Pythonで実行し、
+browser非対応のsocket/ssl/mTLSをローカル実行へ誘導する。
+
+**Acceptance criteria:**
+
+- 軽量JSデモの初期loadにPyodideを含めない。
+- `authlab/` source bundleをPages buildとlocal buildで同じscriptから生成する。
+- scrypt capabilityを実行確認し、不可なら検証済みPBKDF2 fallbackを表示する。
+- 実JWT発行・検証・改ざん拒否をbrowser E2Eで確認する。
+- desktop/mobile GUI、keyboard navigation、worker resetを検証する。

@@ -1,3 +1,4 @@
+import hashlib
 import sys
 import unittest
 from types import SimpleNamespace
@@ -31,6 +32,18 @@ class TestPasswordHasher(unittest.TestCase):
 
     def test_format(self):
         self.assertTrue(self.hasher.hash("x").startswith("$scrypt$"))
+
+    def test_pure_python_pbkdf2_fallback_matches_native_backend(self):
+        params = Pbkdf2Params(iterations=23, dklen=48)
+        expected = params.derive(b"password", b"salt")
+        with patch.object(hashlib, "pbkdf2_hmac", None):
+            actual = params.derive(b"password", b"salt")
+        self.assertEqual(actual, expected)
+
+    def test_dummy_hash_is_structural_and_import_does_not_run_scrypt(self):
+        stored = parse_hash(password_hasher.DUMMY_HASH)
+        self.assertEqual(stored.algorithm, "scrypt")
+        self.assertEqual(stored.digest, b"\x00" * 32)
 
     def test_needs_rehash(self):
         weak = PasswordHasher(Pbkdf2Params(iterations=1000)).hash("x")
