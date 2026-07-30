@@ -14,6 +14,7 @@ from dataclasses import dataclass
 from html.parser import HTMLParser
 import http.cookiejar
 import json
+import os
 from pathlib import Path
 import re
 import subprocess
@@ -34,7 +35,11 @@ from authlab.saml import verify_signature  # noqa: E402
 
 
 REALM = "auth-lab-interop"
-KEYCLOAK = f"http://127.0.0.1:18080/realms/{REALM}"
+KEYCLOAK = os.environ.get(
+    "AUTHLAB_KEYCLOAK_URL",
+    f"http://127.0.0.1:18080/realms/{REALM}",
+)
+INSIDE_FIXTURE = os.environ.get("AUTHLAB_INTEROP_INSIDE") == "1"
 FIXTURE_USER = "learner"
 FIXTURE_PASSWORD = "fixture-only-password"
 FIXTURE_CLIENT_SECRET = "fixture-only-client-secret"
@@ -178,13 +183,42 @@ def retry(label: str, operation: Callable[[], Any], *, timeout: float = 90) -> A
     raise RuntimeError(f"{label} did not become ready") from last_error
 
 
-def compose(*arguments: str, check: bool = True) -> subprocess.CompletedProcess[str]:
+def compose(
+    *arguments: str,
+    check: bool = True,
+    input_text: str | None = None,
+) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         ["docker", "compose", "-f", str(COMPOSE_FILE), *arguments],
         cwd=ROOT,
         check=check,
         text=True,
         capture_output=True,
+        input=input_text,
+    )
+
+
+def client_command(
+    service: str,
+    *arguments: str,
+    input_text: str | None = None,
+) -> subprocess.CompletedProcess[str]:
+    """Run a protocol client inside the isolated fixture network."""
+    if INSIDE_FIXTURE:
+        return subprocess.run(
+            list(arguments),
+            check=False,
+            text=True,
+            capture_output=True,
+            input=input_text,
+        )
+    return compose(
+        "exec",
+        "-T",
+        service,
+        *arguments,
+        check=False,
+        input_text=input_text,
     )
 
 
@@ -351,18 +385,16 @@ def check_saml(trace: Trace) -> None:
 
 def check_ldap(trace: Trace) -> None:
     base = (
-        "exec",
-        "-T",
-        "openldap",
         "ldapsearch",
         "-LLL",
         "-x",
         "-H",
-        "ldap://127.0.0.1:1389",
+        "ldap://openldap:1389",
         "-D",
         "uid=learner,ou=people,dc=auth-lab,dc=local",
     )
-    result = compose(
+    result = client_command(
+        "openldap",
         *base,
         "-w",
         FIXTURE_PASSWORD,
@@ -370,7 +402,6 @@ def check_ldap(trace: Trace) -> None:
         "dc=auth-lab,dc=local",
         "(uid=learner)",
         "uid",
-        check=False,
     )
     if result.returncode != 0 or "uid: learner" not in result.stdout:
         raise AssertionError("LDAP bind/search did not return the fixture entry")
@@ -382,14 +413,14 @@ def check_ldap(trace: Trace) -> None:
         entry_bound=True,
     )
 
-    rejected = compose(
+    rejected = client_command(
+        "openldap",
         *base,
         "-w",
         "wrong-fixture-password",
         "-b",
         "dc=auth-lab,dc=local",
         "(uid=learner)",
-        check=False,
     )
     if rejected.returncode == 0:
         raise AssertionError("LDAP accepted an invalid password")
@@ -397,21 +428,25 @@ def check_ldap(trace: Trace) -> None:
 
 
 def check_kerberos(trace: Trace) -> None:
-    success = compose(
-        "exec",
-        "-T",
+    client_command("kerberos", "kdestroy")
+    initialized = client_command(
         "kerberos",
-        "sh",
-        "-ec",
-        (
-            f"printf '%s\\n' '{FIXTURE_PASSWORD}' | "
-            "kinit learner@AUTH-LAB.LOCAL && "
-            "kvno HTTP/service.auth-lab.local@AUTH-LAB.LOCAL && "
-            "klist"
-        ),
-        check=False,
+        "kinit",
+        "learner@AUTH-LAB.LOCAL",
+        input_text=f"{FIXTURE_PASSWORD}\n",
     )
-    if success.returncode != 0 or "HTTP/service.auth-lab.local" not in success.stdout:
+    ticket = client_command(
+        "kerberos",
+        "kvno",
+        "HTTP/service.auth-lab.local@AUTH-LAB.LOCAL",
+    )
+    cache = client_command("kerberos", "klist")
+    if (
+        initialized.returncode != 0
+        or ticket.returncode != 0
+        or cache.returncode != 0
+        or "HTTP/service.auth-lab.local" not in ticket.stdout + cache.stdout
+    ):
         raise AssertionError("Kerberos did not issue the fixture service ticket")
     trace.record(
         "Kerberos",
@@ -421,17 +456,16 @@ def check_kerberos(trace: Trace) -> None:
         service_ticket_bound=True,
     )
 
-    rejected = compose(
-        "exec",
-        "-T",
+    client_command("kerberos", "kdestroy")
+    rejected = client_command(
         "kerberos",
-        "sh",
-        "-ec",
-        "printf '%s\\n' 'wrong-fixture-password' | kinit learner@AUTH-LAB.LOCAL",
-        check=False,
+        "kinit",
+        "learner@AUTH-LAB.LOCAL",
+        input_text="wrong-fixture-password\n",
     )
     if rejected.returncode == 0:
         raise AssertionError("Kerberos accepted an invalid password")
+    client_command("kerberos", "kdestroy")
     trace.record("Kerberos", "wrong password", "REJECTED", result="preauthentication failed")
 
 
@@ -443,22 +477,26 @@ def wait_for_services() -> None:
     )
 
     def ldap_ready() -> None:
-        result = compose("exec", "-T", "openldap", "ldapwhoami", "-x", check=False)
+        result = client_command(
+            "openldap",
+            "ldapwhoami",
+            "-x",
+            "-H",
+            "ldap://openldap:1389",
+        )
         if result.returncode != 0:
             raise RuntimeError("LDAP is not ready")
 
     def kerberos_ready() -> None:
-        result = compose(
-            "exec",
-            "-T",
+        result = client_command(
             "kerberos",
-            "kadmin.local",
-            "-q",
-            "getprinc learner@AUTH-LAB.LOCAL",
-            check=False,
+            "kinit",
+            "learner@AUTH-LAB.LOCAL",
+            input_text=f"{FIXTURE_PASSWORD}\n",
         )
         if result.returncode != 0:
             raise RuntimeError("Kerberos is not ready")
+        client_command("kerberos", "kdestroy")
 
     retry("OpenLDAP", ldap_ready)
     retry("MIT Kerberos", kerberos_ready)
@@ -484,29 +522,49 @@ def main() -> int:
         action="store_true",
         help="leave a fixture started with --start running after the check",
     )
+    parser.add_argument("--inside", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--trace", type=Path, default=TRACE_DEFAULT)
     arguments = parser.parse_args()
 
     trace = Trace(arguments.trace)
     started = False
+    runner_invoked = False
     try:
         if arguments.start:
             print("[interop] building and starting local-only fixtures")
             started = True
-            result = compose("up", "--build", "-d", check=False)
+            result = compose(
+                "up",
+                "--build",
+                "-d",
+                "keycloak",
+                "openldap",
+                "kerberos",
+                check=False,
+            )
             if result.returncode != 0:
                 sanitized = redact(result.stderr.strip())
                 raise RuntimeError(f"Docker Compose startup failed: {sanitized}")
-        run(trace)
+            runner_invoked = True
+            fixture = compose("run", "--rm", "--build", "runner", check=False)
+            if fixture.stdout:
+                print(redact(fixture.stdout), end="")
+            if fixture.returncode != 0:
+                raise RuntimeError(f"fixture runner failed: {redact(fixture.stderr.strip())}")
+        elif arguments.inside:
+            run(trace)
+        else:
+            parser.error("use --start to run the isolated interoperability fixture")
     except Exception as exc:  # noqa: BLE001 - CLI reporting boundary
         safe_message = redact(str(exc))
-        trace.record(
-            "profile",
-            "complete",
-            "FAIL",
-            error=type(exc).__name__,
-            message=safe_message,
-        )
+        if not runner_invoked:
+            trace.record(
+                "profile",
+                "complete",
+                "FAIL",
+                error=type(exc).__name__,
+                message=safe_message,
+            )
         if started:
             trace.preserve_diagnostics()
         print(f"[interop] FAIL: {type(exc).__name__}: {safe_message}", file=sys.stderr)
@@ -515,7 +573,13 @@ def main() -> int:
         if started and not arguments.keep:
             compose("down", "--volumes", "--remove-orphans", check=False)
 
-    trace.record("profile", "complete", "PASS", protocols=["OIDC", "SAML", "LDAP", "Kerberos"])
+    if not runner_invoked:
+        trace.record(
+            "profile",
+            "complete",
+            "PASS",
+            protocols=["OIDC", "SAML", "LDAP", "Kerberos"],
+        )
     print(f"[interop] redacted trace: {arguments.trace}")
     return 0
 

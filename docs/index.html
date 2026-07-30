@@ -148,7 +148,7 @@ python drills/run_all.py          # watch every protocol run green</div>
 
   <div class="card interop-boundary">
     <h3>Pagesとlocal fixtureの境界</h3>
-    <p><b>このPages上ではDockerを起動しません。</b> ブラウザへcredentialやtokenを持ち込まず、公開ページでは検証内容だけを安全に観察します。実製品との通信はloopback bindと内部Docker networkに閉じたfixtureで実行してください。</p>
+    <p><b>このPages上ではDockerを起動しません。</b> ブラウザへcredentialやtokenを持ち込まず、公開ページでは検証内容だけを安全に観察します。実製品との通信は専用runnerを含む内部Docker networkだけに閉じたfixtureで実行してください。</p>
     <div class="out mono">python scripts/run_interop.py --start
 # OIDC · SAML · LDAP · Kerberos の成功/拒否を検査
 # redacted trace: .tmp/interop/trace.jsonl</div>
@@ -158,9 +158,9 @@ python drills/run_all.py          # watch every protocol run green</div>
     </div>
   </div>
 
-  <div class="interop-topology" aria-label="local browser and runner connect through loopback to three containers on an internal network">
+  <div class="interop-topology" aria-label="an isolated runner connects to three product containers only through an internal Docker network">
     <div><span>CONTROL</span><b>interop runner</b><small>stdlib Python</small></div>
-    <span class="interop-arrow" aria-hidden="true">loopback <span class="interop-arrowhead">→</span></span>
+    <span class="interop-arrow" aria-hidden="true">internal <span class="interop-arrowhead">→</span></span>
     <div><span>FEDERATION</span><b>Keycloak</b><small>OIDC + SAML</small></div>
     <div><span>DIRECTORY</span><b>OpenLDAP</b><small>bind + search</small></div>
     <div><span>TICKETS</span><b>MIT Kerberos</b><small>AS + TGS</small></div>

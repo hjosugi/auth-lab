@@ -154,14 +154,13 @@ class TestInteropComposeIsolation(unittest.TestCase):
     def test_fixture_network_is_internal(self):
         self.assertIn("internal: true", self.compose)
 
-    def test_every_host_port_is_loopback_only(self):
-        published = [
-            line.strip().strip('"')
-            for line in self.compose.splitlines()
-            if line.strip().startswith('- "127.0.0.1:')
-        ]
-        self.assertEqual(len(published), 4)
-        self.assertNotIn("0.0.0.0:", self.compose)
+    def test_product_ports_are_not_published_to_the_host(self):
+        self.assertNotIn("ports:", self.compose)
+
+    def test_runner_joins_the_same_internal_network(self):
+        self.assertIn("  runner:", self.compose)
+        self.assertIn("AUTHLAB_INTEROP_INSIDE", self.compose)
+        self.assertIn("../:/workspace:ro", self.compose)
 
     def test_fixture_values_are_explicitly_non_production(self):
         fixture_files = [

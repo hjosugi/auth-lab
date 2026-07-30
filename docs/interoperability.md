@@ -54,19 +54,21 @@ PKCEを使います。
 
 ## 外部へ出ない構成
 
-`interop/compose.yaml` は次の2層で到達範囲を限定します。
+`interop/compose.yaml` は製品だけでなく検査runnerも `internal: true` のDocker networkへ
+入れます。hostへ公開するportはありません。runner imageにだけLDAP/Kerberos clientを
+入れ、Python sourceはread-only、redacted evidence directoryだけをwrite可能でmountします。
 
-1. 公開portはすべて `127.0.0.1` へbindする。
-2. 3 containerを接続するDocker networkは `internal: true` にする。
-
-| Service | Host endpoint | Container networkでの役割 |
+| Service | Internal endpoint | Container networkでの役割 |
 |---|---|---|
-| Keycloak | `127.0.0.1:18080` | OIDC issuer / SAML IdP |
-| OpenLDAP | `127.0.0.1:1389` | directory server |
-| MIT Kerberos | `127.0.0.1:10088` (TCP/UDP) | KDC |
+| runner | product DNSだけを利用 | protocol client / verifier |
+| Keycloak | `keycloak:8080` | OIDC issuer / SAML IdP |
+| OpenLDAP | `openldap:1389` | directory server |
+| MIT Kerberos | `kerberos:88` (TCP/UDP) | KDC |
 
 realm、directory、KDCは起動ごとに固定fixtureから再構築され、runnerの終了時にvolumeと
 一緒に破棄されます。Keycloakのadmin accountもfixtureのimport/startにしか使いません。
+image取得はcontainer起動前にDocker Engineが行い、起動後のfixture networkには外向きの
+default routeを与えません。
 
 ## redacted trace
 
@@ -112,6 +114,7 @@ unit testやCompose構文検査の成功を、実製品flowの成功とは扱い
 - Keycloak realm: [`interop/keycloak/auth-lab-interop-realm.json`](../interop/keycloak/auth-lab-interop-realm.json)
 - OpenLDAP fixture: [`interop/openldap/`](../interop/openldap/)
 - MIT Kerberos fixture: [`interop/kerberos/`](../interop/kerberos/)
+- isolated protocol client: [`interop/runner/`](../interop/runner/)
 - unit/negative checks: [`tests/test_interop.py`](../tests/test_interop.py)
 
 製品側の起動方法は
