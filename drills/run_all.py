@@ -23,6 +23,7 @@ DRILLS = [
     "11_webauthn",
     "12_mtls",
     "13_ldap_scim",
+    "14_advanced_oauth",
 ]
 
 

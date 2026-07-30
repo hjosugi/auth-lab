@@ -32,6 +32,13 @@
 | 22 | WebAuthn 署名カウンタ退行 | クローン検知 | CWE-294 | — | signCount の単調増加を検証 | `webauthn/relying_party.py` |
 | 23 | JOSE の曲線/署名形式混同 | JWT 偽造・相互運用不全 | CWE-347 | API2:2023 | ES256/384/512 と曲線を固定し、JWS は固定長 R‖S のみ受理 | `jose/jws.py`, `crypto/ec.py` |
 | 24 | Ed25519 小位数鍵 / COSE 型混同 | 署名偽造 | CWE-347 | API2:2023 | 公開鍵の素数位数部分群を検証し、`kty`/`alg`/`crv` を完全一致 | `crypto/ed25519.py`, `webauthn/cose.py` |
+| 25 | PAR front-channel parameter 注入 | 認可request改ざん | CWE-345 | API2:2023 | client認証済みPAR全体を短命・単回の`request_uri`へ束縛 | `oauth/par.py` |
+| 26 | JAR 改ざん・replay | 認可request偽造 | CWE-347 | API2:2023 | client署名、`iss/client_id`、`aud`、期限、単回`jti`を検証 | `oauth/jar.py` |
+| 27 | JARM response差し替え / AS mix-up | 認可response偽造 | CWE-345 | API2:2023 | AS署名、`iss`、`aud`、`exp`、`state`、単回`jti`を検証 | `oauth/jarm.py` |
+| 28 | RARの金額・対象・action差し替え | 過剰な認可 | CWE-863 | API1:2023 | type/schemaを検証し、承認objectをcode/tokenへ継承 | `oauth/rar.py`, `oauth/authorization_server.py` |
+| 29 | CIBA `auth_req_id`取り違え / 過剰poll | 認証フロー混同 | CWE-294 | A07:2021 | client・期限・承認へ束縛し、intervalと単回使用を強制 | `oauth/ciba.py` |
+| 30 | FAPI Bearer / public-client downgrade | token再利用 | CWE-287 | API2:2023 | confidential client、PAR、S256、短命code、mTLS/DPoPを一体で強制 | `oauth/fapi2_security.py` |
+| 31 | signed introspectionをaccess tokenとして使用 | JWT型混同 | CWE-843 | API2:2023 | 専用`typ`と`token_introspection` claim、`iss`/`aud`を検証 | `oauth/fapi2_message_signing.py` |
 
 ## 使い方
 
@@ -42,6 +49,8 @@ python drills/10_kerberos.py               # 16〜19 を実演
 python drills/13_ldap_scim.py              # 12, 13 を実演
 python drills/11_webauthn.py               # 21, 22 を実演
 python -m unittest tests.test_saml_signature # 15 の正規化・方式差し替えnegative test
+python drills/14_advanced_oauth.py          # 25〜31 のbindingを実演
+python -m unittest tests.test_oauth_advanced # 25〜31 の正常系・negative test
 ```
 
 ## 一番大事な一行

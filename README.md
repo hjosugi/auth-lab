@@ -18,8 +18,8 @@
 > このリポジトリの暗号・証明書・SAML・Kerberos 実装は、仕組みを一行ずつ読むための
 > 教材です。本番で独自暗号や独自 IdP を使わないでください。本番では、保守されている
 > 標準ライブラリ、認証基盤、HSM/KMS、適切な鍵ローテーションを使います。純 Python の
-> RSA/AES/ECDSA は定数時間ではなくサイドチャネルに脆弱で、SAML は exc-c14n ではなく
-> C14N 2.0 を使うため本番 IdP とは相互運用しません。目的は「本番で使う」ことではなく
+> RSA/AES/ECDSA は定数時間ではなくサイドチャネルに脆弱です。SAML は exc-c14n と
+> `xmlsec1` 相互検証を学べますが、適合認証済み製品ではありません。目的は「本番で使う」ことではなく
 > 「全バイトを読める」ことです。
 
 ## ▶ ブラウザで試す
@@ -39,6 +39,7 @@
 | MFA | HOTP / TOTP、リカバリコード | RFC 4226/6238 ベクタ、時間窓、リプレイ拒否 |
 | JOSE | JWS / JWT / JWKS、HS/RS 256/384/512 | alg 固定、`kid`、iss/aud/exp/nbf/jti |
 | OAuth 2.0 + Security BCP / OIDC | Code+PKCE、Refresh、Client Credentials、Device | exact redirect、state/nonce、ローテーション+再利用検知 |
+| Advanced OAuth / FAPI 2.0 | PAR、JAR、JARM、RAR、CIBA、Security / Message Signing | request/response/token/approvalの署名・client・audience束縛 |
 | Proof of possession | DPoP、mTLS（**本物のTLSハンドシェイク**） | 証明書/鍵へのトークン束縛 (RFC 8705/9449) |
 | Federation | SAML Web SSO、XML-DSig | 署名対象、audience、ACS、InResponseTo、replay、XSW |
 | Enterprise SSO | Kerberos AS/TGS/service | pre-auth、ticket、authenticator、clock skew、4大AD攻撃 |
@@ -53,14 +54,14 @@ Python 3.11 以上だけで動く。`pip install` は不要。
 
 ```bash
 python scripts/verify.py             # テスト + ドリル + 攻撃回帰を一括検証
-python drills/run_all.py             # 13本のドリルが全部緑になるのを見る
+python drills/run_all.py             # 14本のドリルが全部緑になるのを見る
 python attacks/run_regressions.py    # 危険な入力がすべて拒否されるのを確認
 ```
 
 期待結果:
 
-- 自動テスト **108 件**が成功する（`python -m unittest discover -s tests`）
-- **13 個のドリル**が成功する
+- 自動テストが全件成功する（件数はrunnerが実行時に表示）
+- **14 個のドリル**が成功する
 - 攻撃カタログの全項目が **DEFENDED** になる
 
 OAuth/OIDC サーバを起動して curl で叩く:
@@ -100,8 +101,8 @@ flowchart TD
 authlab/       仕組みを最小構成で実装した Python モジュール（依存なし）
   util crypto passwords mfa jose oauth saml kerberos webauthn mtls directory authz
   server.py    curl で叩ける HTTP デモサーバ
-tests/         108件の自動検証（正常系・異常系・RFCベクタ）
-drills/        13本の実行可能ドリル（run_all.py で一括）
+tests/         自動検証（正常系・異常系・RFCベクタ）
+drills/        14本の実行可能ドリル（run_all.py で一括）
 attacks/       よくある設計ミスを拒否できるかの回帰（catalog.py / run_regressions.py）
 docs/          図解・日本語解説・Spring対応表・面接スクリプト・ブラウザ Playground(index.html)
 scripts/       一括検証(verify.py)と配布ZIP生成(make_zip.py)
@@ -122,6 +123,7 @@ scripts/       一括検証(verify.py)と配布ZIP生成(make_zip.py)
 - プロトコル解説（日本語）: [土台](docs/01_foundations.md) · [JOSE·OAuth·OIDC](docs/02_jose_oauth_oidc.md) ·
   [SAML](docs/03_saml.md) · [Kerberos](docs/04_kerberos.md) · [WebAuthn](docs/05_webauthn.md) ·
   [mTLS·DPoP](docs/06_mtls_dpop.md) · [LDAP·SCIM](docs/07_ldap_scim.md) · [認可モデル](docs/08_authz.md)
+  · [高度なOAuth·FAPI 2.0](docs/14_advanced_oauth_fapi.md)
 - [攻撃対応表（CWE/OWASP）](docs/09_attack_matrix.md) · [Spring Security 対応表](docs/10_spring_security_map.md)
 - [14日ドリル計画](docs/11_14day_plan.md) · [面接用スクリプト（英語）](docs/12_interview_english.md) · [参考サイト・仕様一覧](docs/13_references.md)
 

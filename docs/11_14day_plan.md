@@ -93,11 +93,13 @@
 - 言えるように: mTLS と RFC8705 束縛 / LDAP インジェクション + 匿名バインド / SCIM の deactivate≠delete
 - チェック: mTLS が本物の TLS ハンドシェイクで動くのを確認
 
-### Day 14 — 総仕上げ
+### Day 14 — 高度な OAuth / FAPI 2.0 + 総仕上げ
+- ドリル: `drills/14_advanced_oauth.py`
+- 読む: `docs/14_advanced_oauth_fapi.md` と `docs/09_attack_matrix.md`
+- 言えるように: PAR/JAR/JARMの守る区間の違い / RARの意図束縛 / CIBAの端末分離 / Security ProfileとMessage Signingの境界
 - 実行: `python -m unittest discover -s tests`（全unittest成功）+ `python drills/run_all.py`
-- 読む: `docs/09_attack_matrix.md` を上から音読
 - 仕上げ: `docs/12_interview_english.md` を英語で通しで説明（録音して聞く）
-- チェック: 攻撃対応表22項目を、防御理由つきで空で言える
+- チェック: 攻撃対応表を、防御理由つきで空で言える
 
 ---
 
@@ -111,3 +113,4 @@
 4. 「valid token ≠ authorized」と BOLA が OWASP API #1 である理由
 5. SAML XSW / Kerberos 4大攻撃 / WebAuthn のフィッシング耐性
 6. DPoP・mTLS の送信者制約が Bearer の何を直すか
+7. PAR/JAR/JARM/RAR/CIBAとFAPI 2.0の追加binding

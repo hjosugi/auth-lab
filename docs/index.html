@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>auth-lab · authentication & authorization playground</title>
-<meta name="description" content="An interactive, from-scratch lab for authentication and authorization protocols: JWT, OAuth 2.0 + Security BCP, OIDC, SAML, Kerberos, WebAuthn, mTLS, DPoP, LDAP, SCIM, and the authorization models. Every demo runs real cryptography in your browser.">
+<meta name="description" content="An interactive, from-scratch lab for authentication and authorization protocols: JWT, OAuth, OIDC, PAR, JAR, JARM, RAR, CIBA, FAPI 2.0, SAML, Kerberos, WebAuthn, mTLS, DPoP, LDAP, SCIM, and authorization models.">
 <link rel="stylesheet" href="assets/lab.css">
 </head>
 <body>
@@ -176,8 +176,8 @@ python drills/run_all.py          # watch every protocol run green</div>
       <tr><td>client_credentials</td><td>service-to-service</td><td class="good">correct for machines (no user)</td></tr>
       <tr><td>device_code</td><td>TVs, CLIs, no browser</td><td class="good">correct for input-constrained devices</td></tr>
       <tr><td>refresh_token</td><td>renew without re-login</td><td class="good">with rotation + reuse detection</td></tr>
-      <tr><td>implicit</td><td>—</td><td class="bad">removed in 2.1 (token in the URL fragment)</td></tr>
-      <tr><td>password (ROPC)</td><td>—</td><td class="bad">removed in 2.1 (app sees the password)</td></tr>
+      <tr><td>implicit</td><td>—</td><td class="bad">OAuth 2.1 draft omits it (token in the URL fragment)</td></tr>
+      <tr><td>password (ROPC)</td><td>—</td><td class="bad">OAuth 2.1 draft omits it (app sees the password)</td></tr>
     </table>
   </div>
 
@@ -196,6 +196,15 @@ consumed by: the resource server
 typ: at+jwt</div>
     </div>
     <div class="note">Sending an ID token to an API is a real, common bug. authlab's resource server rejects it on both <code>typ</code> and <code>aud</code>. Try it in the Attacks tab.</div>
+  </div>
+
+  <div class="card">
+    <h3>高度な OAuth / FAPI 2.0 <span class="pill impl">implemented</span></h3>
+    <p>PAR、JAR、JARM、RAR、CIBAを独立した状態機械として実装し、FAPI 2.0
+      Security Profile（PAR・S256・confidential client・sender constraint）と
+      Message Signing（JAR・JARM・RFC 9701 signed introspection）を分離した。
+      脅威と追加bindingは<a href="14_advanced_oauth_fapi.md">日本語解説</a>で追える。</p>
+    <div class="note">OAuth 2.1 は現在も Internet-Draft。FAPI 2.0 の2仕様は Final。</div>
   </div>
 </section>
 
@@ -485,6 +494,7 @@ document:budget#owner@user:erin</div>
       <tr><td>14</td><td>User enumeration by timing</td><td>constant-time fake_verify</td></tr>
       <tr><td>15</td><td>XML signature wrapping</td><td>return-the-signed-element</td></tr>
       <tr><td>16-19</td><td>Kerberoasting, AS-REP roasting, golden ticket, pass-the-ticket</td><td>strong service passwords, preauth, krbtgt hygiene, short tickets</td></tr>
+      <tr><td>25-31</td><td>PAR/JAR/JARM/RAR/CIBA/FAPI parameter, replay, and type confusion</td><td>authenticated request references, signatures, structured grants, sender constraints</td></tr>
     </table>
     <div class="note">Full CWE / OWASP mapping: <code>docs/09_attack_matrix.md</code>.</div>
   </div>
@@ -505,6 +515,8 @@ document:budget#owner@user:erin</div>
       <li>JWT / JWS / JWK / JWA — <a href="https://datatracker.ietf.org/doc/html/rfc7519">7519</a> / <a href="https://datatracker.ietf.org/doc/html/rfc7515">7515</a> / <a href="https://datatracker.ietf.org/doc/html/rfc7517">7517</a> / <a href="https://datatracker.ietf.org/doc/html/rfc7518">7518</a>; JWT BCP <a href="https://datatracker.ietf.org/doc/html/rfc8725">RFC 8725</a></li>
       <li>Token introspection / revocation — <a href="https://datatracker.ietf.org/doc/html/rfc7662">7662</a> / <a href="https://datatracker.ietf.org/doc/html/rfc7009">7009</a></li>
       <li>Device flow — <a href="https://datatracker.ietf.org/doc/html/rfc8628">RFC 8628</a>; DPoP — <a href="https://datatracker.ietf.org/doc/html/rfc9449">RFC 9449</a>; mTLS tokens — <a href="https://datatracker.ietf.org/doc/html/rfc8705">RFC 8705</a></li>
+      <li>Advanced OAuth — <a href="https://www.rfc-editor.org/rfc/rfc9126">PAR</a>, <a href="https://www.rfc-editor.org/rfc/rfc9101">JAR</a>, <a href="https://www.rfc-editor.org/rfc/rfc9396">RAR</a>, <a href="https://openid.net/specs/oauth-v2-jarm-final.html">JARM Final</a>, <a href="https://openid.net/specs/openid-client-initiated-backchannel-authentication-core-1_0-final.html">CIBA Final</a></li>
+      <li>FAPI 2.0 — <a href="https://openid.net/specs/fapi-security-profile-2_0.html">Security Profile Final</a>, <a href="https://openid.net/specs/fapi-message-signing-2_0.html">Message Signing Final</a>, <a href="https://www.rfc-editor.org/rfc/rfc9701">signed introspection</a></li>
       <li>HOTP / TOTP — <a href="https://datatracker.ietf.org/doc/html/rfc4226">4226</a> / <a href="https://datatracker.ietf.org/doc/html/rfc6238">6238</a></li>
       <li>WebAuthn — <a href="https://www.w3.org/TR/webauthn-2/">W3C Level 2</a>; CTAP2 — <a href="https://fidoalliance.org/specs/fido-v2.1-ps-20210615/fido-client-to-authenticator-protocol-v2.1-ps-20210615.html">FIDO2</a></li>
       <li>SAML 2.0 — <a href="https://docs.oasis-open.org/security/saml/v2.0/saml-core-2.0-os.pdf">core</a>; XML-DSig — <a href="https://www.w3.org/TR/xmldsig-core/">W3C</a></li>

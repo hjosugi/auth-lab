@@ -25,12 +25,15 @@ drills can drive the protocol without a socket. authlab.web wraps it in HTTP.
 from __future__ import annotations
 
 import hashlib
+import json
+from copy import deepcopy
 from dataclasses import dataclass, field
 from typing import Any
 from urllib.parse import urlencode, urlsplit
 
+from ..jose.errors import JOSEError
 from ..jose.jwks import JWK, JWKSet
-from ..jose.jws import RS256
+from ..jose.jws import JWS, RS256
 from ..jose.jwt import JWT
 from ..util.clock import Clock, SystemClock
 from ..util.ct import constant_time_equals, random_token
@@ -66,6 +69,7 @@ from .models import (
 # The alphabet omits vowels (so no accidental words) and the digits and
 # letters that look alike.
 USER_CODE_ALPHABET = "BCDFGHJKLMNPQRSTVWXZ"
+CLIENT_ASSERTION_TYPE = "urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
 
 
 @dataclass
@@ -92,6 +96,9 @@ class AuthorizationServer:
         ]
     )
     known_resources: list[str] = field(default_factory=lambda: ["https://api.auth-lab.local"])
+    supported_authorization_detail_types: list[str] = field(
+        default_factory=lambda: ["account_information", "payment_initiation"]
+    )
 
     def __post_init__(self) -> None:
         if self.signing_key is None:
@@ -203,6 +210,15 @@ class AuthorizationServer:
             if target not in self.known_resources:
                 raise InvalidTarget(f"unknown resource: {target!r}")
 
+        authorization_details: list[dict[str, Any]] = []
+        if params.get("authorization_details") is not None:
+            from .rar import validate_authorization_details
+
+            authorization_details = validate_authorization_details(
+                params["authorization_details"],
+                supported_types=self.supported_authorization_detail_types,
+            )
+
         return {
             "client": client,
             "redirect_uri": redirect_uri,
@@ -213,6 +229,7 @@ class AuthorizationServer:
             "code_challenge_method": method if challenge else "S256",
             "resource": resources,
             "dpop_jkt": params.get("dpop_jkt"),
+            "authorization_details": authorization_details,
         }
 
     def issue_authorization_code(
@@ -238,6 +255,7 @@ class AuthorizationServer:
             auth_time=auth_time if auth_time is not None else now,
             resource=validated.get("resource", []),
             dpop_jkt=validated.get("dpop_jkt"),
+            authorization_details=deepcopy(validated.get("authorization_details", [])),
         )
         self.store.codes[code.code] = code
         self.store.log("code_issued", f"code for {subject} / {code.client_id}")
@@ -289,9 +307,55 @@ class AuthorizationServer:
                 raise InvalidClient("client authentication failed")
             return client
 
+        if client.token_endpoint_auth_method == "private_key_jwt":
+            self._verify_client_assertion(client, params)
+            return client
+
         if not client.client_secret or not constant_time_equals(secret or "", client.client_secret):
             raise InvalidClient("client authentication failed")
         return client
+
+    def _verify_client_assertion(self, client: Client, params: dict[str, Any]) -> None:
+        """Verify RFC 7523 private_key_jwt client authentication.
+
+        The assertion is audience-, lifetime-, and replay-bound in addition to
+        being signed by a key from the client's registered JWKS.
+        """
+
+        assertion = params.get("client_assertion")
+        if (
+            params.get("client_assertion_type") != CLIENT_ASSERTION_TYPE
+            or not isinstance(assertion, str)
+            or not client.jwks
+        ):
+            raise InvalidClient("client authentication failed")
+        try:
+            parsed = JWS.verify(assertion, JWKSet.from_json(client.jwks).resolver(), [RS256])
+            claims = json.loads(parsed.payload)
+        except (JOSEError, ValueError, json.JSONDecodeError, UnicodeDecodeError, TypeError) as exc:
+            raise InvalidClient("client authentication failed") from exc
+        if not isinstance(claims, dict):
+            raise InvalidClient("client authentication failed")
+        if claims.get("iss") != client.client_id or claims.get("sub") != client.client_id:
+            raise InvalidClient("client assertion subject mismatch")
+        # FAPI 2.0 tightens RFC 7523 by requiring the AS issuer itself as one
+        # string, not an endpoint URL or an array.
+        if claims.get("aud") != self.issuer:
+            raise InvalidClient("client assertion audience mismatch")
+        now = self.clock.now()
+        if (
+            not isinstance(claims.get("iat"), int)
+            or not isinstance(claims.get("exp"), int)
+            or claims["iat"] > now + 60
+            or claims["exp"] < now
+            or claims["exp"] < claims["iat"]
+            or claims["exp"] - claims["iat"] > 300
+        ):
+            raise InvalidClient("client assertion lifetime is invalid")
+        jti = claims.get("jti")
+        if not isinstance(jti, str) or not jti or jti in self.store.seen_jtis:
+            raise InvalidClient("client assertion replay detected")
+        self.store.seen_jtis[jti] = claims["exp"]
 
     # ------------------------------------------------------------------
     # token endpoint
@@ -399,6 +463,7 @@ class AuthorizationServer:
             cnf_jkt=cnf_jkt,
             cnf_x5t=cnf_x5t,
             include_refresh=True,
+            authorization_details=code.authorization_details,
         )
 
     def _grant_refresh_token(
@@ -444,6 +509,22 @@ class AuthorizationServer:
         else:
             scope = token.scope
 
+        if not client.rotate_refresh_tokens:
+            return self._issue_token_set(
+                client=client,
+                subject=token.subject,
+                scope=scope,
+                nonce=None,
+                amr=[],
+                auth_time=0,
+                audience=self.known_resources[:1],
+                cnf_jkt=token.cnf_jkt or cnf_jkt,
+                cnf_x5t=token.cnf_x5t or cnf_x5t,
+                include_refresh=False,
+                issue_id_token=False,
+                authorization_details=token.authorization_details,
+            )
+
         token.used = True
         result = self._issue_token_set(
             client=client,
@@ -458,6 +539,7 @@ class AuthorizationServer:
             include_refresh=True,
             family_id=token.family_id,
             issue_id_token=False,
+            authorization_details=token.authorization_details,
         )
         token.rotated_to = result["refresh_token"]
         return result
@@ -546,6 +628,7 @@ class AuthorizationServer:
         include_refresh: bool,
         family_id: str | None = None,
         issue_id_token: bool = True,
+        authorization_details: list[dict[str, Any]] | None = None,
     ) -> dict[str, Any]:
         now = self.clock.now()
         token_type = "DPoP" if cnf_jkt else "Bearer"
@@ -558,6 +641,9 @@ class AuthorizationServer:
             cnf["x5t#S256"] = cnf_x5t
         if cnf:
             extra["cnf"] = cnf
+        details = deepcopy(authorization_details or [])
+        if details:
+            extra["authorization_details"] = details
 
         if self.jwt_access_tokens:
             access_value = self._jwt.issue(
@@ -587,6 +673,7 @@ class AuthorizationServer:
             audience=audience,
             cnf_jkt=cnf_jkt,
             cnf_x5t=cnf_x5t,
+            authorization_details=deepcopy(details),
         )
         self.store.access_tokens[access_value] = access
 
@@ -596,6 +683,8 @@ class AuthorizationServer:
             "expires_in": self.access_token_lifetime,
             "scope": " ".join(scope),
         }
+        if details:
+            response["authorization_details"] = deepcopy(details)
 
         if include_refresh and subject is not None:
             refresh_value = random_token(32)
@@ -608,6 +697,7 @@ class AuthorizationServer:
                 family_id=family_id or random_token(16),
                 cnf_jkt=cnf_jkt,
                 cnf_x5t=cnf_x5t,
+                authorization_details=deepcopy(details),
             )
             response["refresh_token"] = refresh_value
 
@@ -747,6 +837,8 @@ class AuthorizationServer:
             user = self.store.users.get(record.subject)
             if user:
                 body["username"] = user.username
+        if record.authorization_details:
+            body["authorization_details"] = deepcopy(record.authorization_details)
         cnf = {}
         if record.cnf_jkt:
             cnf["jkt"] = record.cnf_jkt
@@ -803,6 +895,7 @@ class AuthorizationServer:
             "token_endpoint_auth_methods_supported": [
                 "client_secret_basic",
                 "client_secret_post",
+                "private_key_jwt",
                 "none",
                 "tls_client_auth",
             ],

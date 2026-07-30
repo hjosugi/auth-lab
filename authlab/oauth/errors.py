@@ -45,6 +45,30 @@ class InvalidRequest(OAuthError):
     error = "invalid_request"
 
 
+class InvalidRequestObject(OAuthError):
+    """RFC 9101: the signed authorization Request Object is invalid."""
+
+    error = "invalid_request_object"
+
+
+class InvalidRequestURI(OAuthError):
+    """RFC 9101/9126: a request_uri cannot be resolved safely."""
+
+    error = "invalid_request_uri"
+
+
+class InvalidAuthorizationDetails(OAuthError):
+    """RFC 9396: malformed or unsupported structured authorization."""
+
+    error = "invalid_authorization_details"
+
+
+class InvalidAuthorizationResponse(OAuthError):
+    """A signed JARM response failed validation."""
+
+    error = "invalid_authorization_response"
+
+
 class InvalidClient(OAuthError):
     error = "invalid_client"
     status = 401

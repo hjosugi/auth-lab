@@ -18,6 +18,14 @@ auth-lab を作るのに実際に参照した一次情報と、学習に使え�
 - [RFC 9068](https://datatracker.ietf.org/doc/html/rfc9068) — JWT アクセストークン (`at+jwt`)
 - [RFC 9449](https://datatracker.ietf.org/doc/html/rfc9449) — **DPoP**
 - [RFC 8705](https://datatracker.ietf.org/doc/html/rfc8705) — mTLS クライアント認証 & 証明書束縛トークン
+- [RFC 9126](https://www.rfc-editor.org/rfc/rfc9126) — PAR（Pushed Authorization Requests）
+- [RFC 9101](https://www.rfc-editor.org/rfc/rfc9101) — JAR（JWT-Secured Authorization Request）
+- [RFC 9396](https://www.rfc-editor.org/rfc/rfc9396) — RAR（Rich Authorization Requests）
+- [JARM Final](https://openid.net/specs/oauth-v2-jarm-final.html) — 署名付き認可response
+- [CIBA Core 1.0 Final](https://openid.net/specs/openid-client-initiated-backchannel-authentication-core-1_0-final.html) — backchannel認証
+- [FAPI 2.0 Security Profile Final](https://openid.net/specs/fapi-security-profile-2_0.html) — confidential client、PAR、sender constraint
+- [FAPI 2.0 Message Signing Final](https://openid.net/specs/fapi-message-signing-2_0.html) — JAR/JARM/signed introspection
+- [RFC 9701](https://www.rfc-editor.org/rfc/rfc9701) — JWT Token Introspection Response
 - [OpenID Connect Core 1.0](https://openid.net/specs/openid-connect-core-1_0.html) — OIDC
 - [OpenID Connect Discovery](https://openid.net/specs/openid-connect-discovery-1_0.html)
 

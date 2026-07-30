@@ -21,6 +21,7 @@ JWT デコード、TOTP 生成、PKCE、パスワードハッシュ、ReBAC チ�
 - [06 - mTLS と DPoP（送信者制約）](06_mtls_dpop.md)
 - [07 - LDAP と SCIM](07_ldap_scim.md)
 - [08 - 認可モデル: RBAC / ABAC / ReBAC](08_authz.md)
+- [14 - 高度な OAuth: PAR / JAR / JARM / RAR / CIBA / FAPI 2.0](14_advanced_oauth_fapi.md)
 
 ### 図で見る
 - [図集（全プロトコルのシーケンス図・構造図）](diagrams.md) — OAuth/OIDC/SAML/Kerberos/WebAuthn/DPoP/mTLS のフロー図
@@ -41,7 +42,7 @@ authlab/          実装本体（Python 標準ライブラリのみ、pip instal
   passwords/      scrypt/PBKDF2/Argon2id パスワードハッシュ
   mfa/            HOTP/TOTP, リカバリコード
   jose/           JWS/JWT/JWKS
-  oauth/          認可サーバ, リソースサーバ, クライアント, DPoP
+  oauth/          認可サーバ, DPoP, PAR/JAR/JARM/RAR/CIBA, FAPI 2.0
   saml/           SAML SP/IdP, XML-DSig
   kerberos/       KDC, クライアント, サービス
   webauthn/       認証器, リライングパーティ, COSE
@@ -49,7 +50,7 @@ authlab/          実装本体（Python 標準ライブラリのみ、pip instal
   directory/      LDAP, SCIM
   authz/          RBAC, ABAC, ReBAC
   server.py       curl で叩ける HTTP デモサーバ
-drills/           13本の自己検証ドリル（run_all.py で一括）
+drills/           14本の自己検証ドリル（run_all.py で一括）
 attacks/          攻撃カタログ（素朴実装が破れる→authlabは防ぐ）
 tests/            unittest（RFC 8032/6979/9106 ベクタ含む）
 docs/             このドキュメント + playground
