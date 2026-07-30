@@ -263,6 +263,8 @@ _TOKEN = re.compile(r'\s*(\(|\)|"[^"]*"|[^\s()]+)')
 
 
 def _parse_scim_filter(text: str):
+    if not isinstance(text, str) or not text.strip():
+        raise SCIMError(400, "filter must not be empty", "invalidFilter")
     tokens = _TOKEN.findall(text)
     pos = 0
 
@@ -291,6 +293,8 @@ def _parse_scim_filter(text: str):
 
     def parse_term():
         nonlocal pos
+        if peek() is None or peek() in (")", "and", "or"):
+            raise SCIMError(400, "filter term is incomplete", "invalidFilter")
         if peek() == "(":
             pos += 1
             inner = parse_or()

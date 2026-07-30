@@ -21,7 +21,7 @@
 | [#9](https://github.com/hjosugi/auth-lab/issues/9) | Open | WebAuthn | 実ブラウザpasskey E2E |
 | [#10](https://github.com/hjosugi/auth-lab/issues/10) | Closed | Authz | Cedar/Rego/RBAC/ABAC/ReBAC比較 |
 | [#11](https://github.com/hjosugi/auth-lab/issues/11) | Closed | Crypto | Ed25519とES256のJOSE/WebAuthn対応 |
-| [#12](https://github.com/hjosugi/auth-lab/issues/12) | Open | Testing | property/fuzz/conformance test |
+| [#12](https://github.com/hjosugi/auth-lab/issues/12) | Closed | Testing | property/fuzz/conformance test |
 | [#13](https://github.com/hjosugi/auth-lab/issues/13) | Closed | Spring | Java 21 Spring Security companion |
 | [#14](https://github.com/hjosugi/auth-lab/issues/14) | Closed | Pages | 二言語interactive sequence |
 | [#15](https://github.com/hjosugi/auth-lab/issues/15) | Closed | Password | Argon2idと定数時間注記 |
@@ -76,12 +76,19 @@ SAML IdPを起動し、教材実装の概念を実製品のwire flowへ対応付
 
 **Goal:** parserと状態遷移へproperty test/fuzzingを追加する。
 
+**実装:** [`scripts/run_property_fuzz.py`](../scripts/run_property_fuzz.py) と
+[`docs/15_property_fuzz.md`](15_property_fuzz.md)。固定/派生seedで5 propertyを
+有界生成し、OAuthの不正遷移と任意順replayを検証する。失敗入力はdelta-minimizeし、
+seed、元入力、最小入力をCI artifactへ常に保存する。
+
 **Acceptance criteria:**
 
 - malformed compact token/XML/SCIM filterでprocessがcrashしない。
 - replayは任意の並びでも二度目を拒否する。
 - OAuth state machineの不正遷移を自動生成する。
 - seedと最小化したcounterexampleをCI artifactに保存する。
+- input sizeとexecution timeを有界にする。
+- 実target/credentialを使わずローカルだけで実行する。
 
 ## 6. Java 21 Spring Security companion application
 

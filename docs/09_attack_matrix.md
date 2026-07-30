@@ -43,6 +43,7 @@
 | 33 | owner/adminによるexplicit deny迂回 | 認可欠陥 | CWE-863 | API5:2023 | deny-overrides / forbid-overrides-permitを全モデルで固定 | `authz/policy_comparison.py` |
 | 34 | relationship graphの循環・過深度 | DoS / 認可不整合 | CWE-674 | API4:2023 | path-local cycle検知と設定可能なdepth上限 | `authz/rebac.py`, `authz/policy_comparison.py` |
 | 35 | decision logへの識別子・policy input漏洩 | 情報漏洩 | CWE-532 | API8:2023 | HMAC仮名化、field allowlist、期限付きretention | `authz/policy_comparison.py` |
+| 36 | malformed token/XML/filterによるparser crash・resource exhaustion | DoS | CWE-400 | API4:2023 | 入力/時間上限、trust-boundary error正規化、固定seed property fuzz | `tests/property_fuzz.py`, `directory/scim.py` |
 
 ## 使い方
 
@@ -58,6 +59,7 @@ python -m unittest tests.test_oauth_advanced # 25〜31 の正常系・negative t
 python drills/08_authz_models.py            # 32〜35 の5モデル比較
 python -m unittest tests.test_policy_comparison # 32〜35 のparity/negative test
 PYTHONPATH=. python attacks/run_regressions.py  # 32, 33 を含む拒否回帰
+python scripts/run_property_fuzz.py             # 6〜9, 15, 36 の順序・parser生成回帰
 ```
 
 ## 一番大事な一行
