@@ -1,0 +1,38 @@
+auth-lab:
+  security:
+    issuer: ${AUTHLAB_ISSUER:http://127.0.0.1:9000}
+    audience: ${AUTHLAB_AUDIENCE:auth-lab-api}
+    jwk-set-uri: ${AUTHLAB_JWK_SET_URI:http://127.0.0.1:9000/oauth2/jwks}
+    introspection-uri: ${AUTHLAB_INTROSPECTION_URI:http://127.0.0.1:9000/oauth2/introspect}
+    introspection-client-id: ${AUTHLAB_INTROSPECTION_CLIENT_ID:auth-lab-resource}
+    introspection-client-secret: ${AUTHLAB_INTROSPECTION_CLIENT_SECRET:change-me}
+    allowed-origins:
+      - ${AUTHLAB_ALLOWED_ORIGIN:https://app.auth-lab.local}
+
+spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          authlab:
+            provider: authlab
+            client-id: ${AUTHLAB_OIDC_CLIENT_ID:auth-lab-web}
+            client-secret: ${AUTHLAB_OIDC_CLIENT_SECRET:change-me}
+            authorization-grant-type: authorization_code
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            scope: [openid, profile]
+        provider:
+          authlab:
+            authorization-uri: ${AUTHLAB_AUTHORIZATION_URI:http://127.0.0.1:9000/oauth2/authorize}
+            token-uri: ${AUTHLAB_TOKEN_URI:http://127.0.0.1:9000/oauth2/token}
+            jwk-set-uri: ${AUTHLAB_OIDC_JWK_SET_URI:http://127.0.0.1:9000/oauth2/jwks}
+            user-info-uri: ${AUTHLAB_USERINFO_URI:http://127.0.0.1:9000/userinfo}
+            user-name-attribute: sub
+server:
+  servlet:
+    session:
+      cookie:
+        http-only: true
+        secure: ${SESSION_COOKIE_SECURE:true}
+        same-site: lax
+  forward-headers-strategy: framework

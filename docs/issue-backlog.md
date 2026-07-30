@@ -6,7 +6,7 @@
 
 ## Live Issue index
 
-2026-07-29時点のGitHub Issuesを、学習トラッカーと実装backlogに分けて記録します。
+2026-07-30時点のGitHub Issuesを、学習トラッカーと実装backlogに分けて記録します。
 詳細と最新状態は各Issueを正とします。
 
 | Issue | 状態 | 種別 | 内容 |
@@ -22,7 +22,7 @@
 | [#10](https://github.com/hjosugi/auth-lab/issues/10) | Closed | Authz | Cedar/Rego/RBAC/ABAC/ReBAC比較 |
 | [#11](https://github.com/hjosugi/auth-lab/issues/11) | Closed | Crypto | Ed25519とES256のJOSE/WebAuthn対応 |
 | [#12](https://github.com/hjosugi/auth-lab/issues/12) | Open | Testing | property/fuzz/conformance test |
-| [#13](https://github.com/hjosugi/auth-lab/issues/13) | Open | Spring | Java 21 Spring Security companion |
+| [#13](https://github.com/hjosugi/auth-lab/issues/13) | Closed | Spring | Java 21 Spring Security companion |
 | [#14](https://github.com/hjosugi/auth-lab/issues/14) | Closed | Pages | 二言語interactive sequence |
 | [#15](https://github.com/hjosugi/auth-lab/issues/15) | Closed | Password | Argon2idと定数時間注記 |
 
@@ -86,6 +86,11 @@ SAML IdPを起動し、教材実装の概念を実製品のwire flowへ対応付
 ## 6. Java 21 Spring Security companion application
 
 **Goal:** 本ラボの検証項目を本番向けSpring Security構成へ写経する。
+
+**実装:** [`spring-companion/`](../spring-companion/README.md)。OIDC session、
+JWT/opaque resource server、method securityを分離した3本のfilter chainと、
+issuer/audience/type/scope/ownership、key rotation、metadata/JWKS outageの
+success/negative testをJava 21で実行する。Pythonラボは引き続き依存なしで独立する。
 
 **Acceptance criteria:**
 

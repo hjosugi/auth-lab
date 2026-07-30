@@ -5,6 +5,10 @@ Spring Security を使うと「動くけど中身が見えない」。auth-lab �
 
 この表は「auth-lab のこの概念 = Spring Security のこのクラス/インターフェース」の索引。
 
+[Java 21 / Spring Security companion](../spring-companion/README.md)は、
+下記のJWT / opaque token / OIDC login / method security対応を実行可能な構成と
+negative testで示す。
+
 ## 認証全般
 
 | auth-lab | Spring Security | 役割 |

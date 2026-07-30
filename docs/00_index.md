@@ -30,6 +30,7 @@ OAuth/SAML/Kerberos/WebAuthnの日英sequenceなどを
 ### リファレンス
 - [09 - 攻撃対応表（CWE / OWASP マッピング）](09_attack_matrix.md)
 - [10 - Spring Security 対応表](10_spring_security_map.md)
+- [Java 21 / Spring Security companion](../spring-companion/README.md) — OIDC login、2種類のresource server、method security
 - [11 - 14日ドリル計画](11_14day_plan.md)
 - [12 - 面接用スクリプト（英語）](12_interview_english.md)
 - [13 - 参考サイト・仕様一覧](13_references.md)
@@ -51,6 +52,7 @@ authlab/          実装本体（Python 標準ライブラリのみ、pip instal
   directory/      LDAP, SCIM
   authz/          RBAC, ABAC, ReBAC, Cedar/Rego semantic comparison
   server.py       curl で叩ける HTTP デモサーバ
+spring-companion/ Java 21 / Spring Securityによる本番向け写経（Pythonとは独立）
 drills/           14本の自己検証ドリル（run_all.py で一括）
 attacks/          攻撃カタログ（素朴実装が破れる→authlabは防ぐ）
 tests/            unittest（RFC 8032/6979/9106 ベクタ含む）

@@ -20,6 +20,14 @@ jobs:
           python-version: "3.12"
       - name: Verify tests, drills, and attack regressions
         run: python scripts/verify.py
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+          cache-dependency-path: spring-companion/pom.xml
+      - name: Verify Spring Security companion
+        run: mvn --batch-mode --file spring-companion/pom.xml verify
       - uses: actions/setup-node@v6
         with:
           node-version: "24"
@@ -31,7 +39,7 @@ jobs:
           node --test tests/browser/*.test.js
       - name: Build learning bundle
         run: python scripts/build_zip.py
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: auth-lab-learning-bundle
           path: dist/auth-lab-learning-bundle.zip
