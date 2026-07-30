@@ -117,7 +117,7 @@ attacks/       よくある設計ミスを拒否できるかの回帰（catalog.
 docs/          図解・日本語解説・Spring対応表・面接スクリプト・ブラウザ Playground(index.html)
 spring-companion/ Java 21 / Spring SecurityによるOIDC・resource server・method security写経
 interop/       localhost限定のKeycloak・OpenLDAP・MIT Kerberos fixture
-scripts/       一括検証(verify.py)と配布ZIP生成(make_zip.py)
+scripts/       一括検証(verify.py)と決定的な配布ZIP生成(build_zip.py)
 ```
 
 ## 学習の原則

@@ -15,7 +15,7 @@
 | [#3](https://github.com/hjosugi/auth-lab/issues/3) | Open | 学習 | Week 2: エンタープライズと高度なトークン（Day 8–14） |
 | [#4](https://github.com/hjosugi/auth-lab/issues/4) | Closed | CI | Actionsで全検証を実行、badgeを追加 |
 | [#5](https://github.com/hjosugi/auth-lab/issues/5) | Closed | SAML | exc-c14nと実IdP相互運用 |
-| [#6](https://github.com/hjosugi/auth-lab/issues/6) | Open | Interop | OAuth/LDAP/Kerberos/SAML container lab |
+| [#6](https://github.com/hjosugi/auth-lab/issues/6) | Closed | Interop | OAuth/LDAP/Kerberos/SAML container lab |
 | [#7](https://github.com/hjosugi/auth-lab/issues/7) | Closed | Pages | Pyodideで実Pythonモジュールを実行 |
 | [#8](https://github.com/hjosugi/auth-lab/issues/8) | Closed | OAuth | PAR/JAR/JARM/RAR/CIBA/FAPI 2.0 |
 | [#9](https://github.com/hjosugi/auth-lab/issues/9) | Closed | WebAuthn | 実ブラウザpasskey E2E |
@@ -30,6 +30,14 @@
 
 **Goal:** KeycloakまたはSpring Authorization Server、OpenLDAP、MIT Kerberos、
 SAML IdPを起動し、教材実装の概念を実製品のwire flowへ対応付ける。
+
+**実装:** [`interop/`](../interop/) と
+[`scripts/run_interop.py`](../scripts/run_interop.py)。
+外部portを公開しないinternal Docker networkでKeycloak 26.7.0、OpenLDAP、MIT
+Kerberosと専用runnerを起動する。OIDC/JWKS、SAML/XML-DSig、LDAP bind/search、
+Kerberos AS/TGSの正常系と誤credential拒否を実行し、mask済みJSONL evidenceだけを
+CI artifactへ保存する。実行手順とauthlab sourceの対応は
+[`docs/interoperability.md`](interoperability.md)にまとめた。
 
 **Acceptance criteria:**
 
