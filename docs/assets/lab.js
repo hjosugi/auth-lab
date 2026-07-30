@@ -462,15 +462,64 @@ function checkRedirect() {
 /* tabs                                                               */
 /* ------------------------------------------------------------------ */
 
-function showTab(id, btn) {
-  document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
-  document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
-  document.getElementById(id).classList.add("active");
-  if (btn) btn.classList.add("active");
-  window.scrollTo({ top: 0, behavior: "smooth" });
+function revealSelectedTab(button, smooth = true) {
+  const tabs = button?.closest(".tabs");
+  if (!tabs) return;
+  const left = button.offsetLeft - (tabs.clientWidth - button.offsetWidth) / 2;
+  tabs.scrollTo({ left: Math.max(0, left), behavior: smooth ? "smooth" : "auto" });
+}
+
+function showTab(id, btn, options = {}) {
+  const panel = document.getElementById(id);
+  if (!panel || !panel.classList.contains("tab-panel")) return;
+  document.querySelectorAll(".tab-panel").forEach(p => {
+    const active = p === panel;
+    p.classList.toggle("active", active);
+    p.hidden = !active;
+  });
+  const selected = btn || document.querySelector(`.tab-btn[data-tab-target="${id}"]`);
+  document.querySelectorAll(".tab-btn").forEach(b => {
+    const active = b === selected;
+    b.classList.toggle("active", active);
+    b.setAttribute("aria-selected", String(active));
+    b.tabIndex = active ? 0 : -1;
+  });
+  revealSelectedTab(selected, options.scroll !== false);
+  if (options.updateHash !== false && window.history?.replaceState) {
+    window.history.replaceState(null, "", `#${id}`);
+  }
+  document.dispatchEvent(new CustomEvent("authlab:tabshown", { detail: { id } }));
+  if (options.scroll !== false) window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  const tabs = [...document.querySelectorAll(".tab-btn")];
+  for (const tab of tabs) {
+    tab.addEventListener("keydown", event => {
+      const current = tabs.indexOf(tab);
+      let next = null;
+      if (event.key === "ArrowRight") next = (current + 1) % tabs.length;
+      if (event.key === "ArrowLeft") next = (current - 1 + tabs.length) % tabs.length;
+      if (event.key === "Home") next = 0;
+      if (event.key === "End") next = tabs.length - 1;
+      if (next === null) return;
+      event.preventDefault();
+      tabs[next].click();
+      tabs[next].focus();
+    });
+  }
+  const requested = window.location.hash.slice(1);
+  const initial = document.getElementById(requested)?.classList.contains("tab-panel")
+    ? requested
+    : "t-start";
+  showTab(initial, null, { scroll: false, updateHash: Boolean(requested) });
+  window.addEventListener("hashchange", () => {
+    const id = window.location.hash.slice(1);
+    showTab(id, null, { scroll: false, updateHash: false });
+  });
+  window.addEventListener("resize", () => {
+    revealSelectedTab(document.querySelector(".tab-btn.active"), false);
+  });
   if (document.getElementById("jwt-input")) decodeJwt();
   if (document.getElementById("policy-scenario")) policyParityDemo();
   // report Web Crypto availability

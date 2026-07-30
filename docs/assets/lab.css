@@ -44,10 +44,12 @@ header.hero p { margin: 4px auto; max-width: 720px; color: var(--dim); }
 
 nav.tabs {
   position: sticky; top: 0; z-index: 10;
-  display: flex; flex-wrap: wrap; gap: 4px; justify-content: center;
+  display: flex; flex-wrap: nowrap; gap: 4px; justify-content: safe center;
+  overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin;
   padding: 10px; background: var(--bg); border-bottom: 1px solid var(--border);
 }
 .tab-btn {
+  flex: 0 0 auto;
   padding: 7px 14px; border: 1px solid transparent; border-radius: 7px;
   background: none; color: var(--dim); cursor: pointer; font-size: 13px; font-weight: 600;
 }
@@ -100,6 +102,16 @@ button.act:focus-visible, select:focus-visible, input:focus-visible, textarea:fo
 .bad { color: var(--bad); font-weight: 600; }
 .warn { color: var(--warn); font-weight: 600; }
 .webauthn-actions { display: flex; flex-wrap: wrap; gap: 4px; }
+.pyodide-actions { display: flex; flex-wrap: wrap; gap: 4px; }
+.python-editor { min-height: 420px; tab-size: 4; white-space: pre; }
+.pyodide-actions .act { min-height: 44px; }
+#pyodide-output { max-height: 360px; overflow: auto; word-break: normal; }
+@media (max-width: 640px) {
+  .tab-btn { min-height: 44px; }
+  .python-editor { min-height: 340px; font-size: 12px; }
+  .pyodide-actions { display: grid; grid-template-columns: 1fr; }
+  .pyodide-actions .act { width: 100%; margin-right: 0; }
+}
 
 .jwt-seg { padding: 8px 10px; border-radius: 6px; margin: 4px 0; white-space: pre-wrap; word-break: break-all; }
 .jwt-h { background: rgba(88,166,255,0.12); border-left: 3px solid var(--accent); }

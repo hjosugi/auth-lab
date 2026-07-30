@@ -26,6 +26,11 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Build browser Python source bundle
+        run: python scripts/build_pyodide_bundle.py
       - uses: actions/configure-pages@v6
         with:
           enablement: true
