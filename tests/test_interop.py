@@ -188,6 +188,10 @@ class TestInteropComposeIsolation(unittest.TestCase):
             saml_client["attributes"]["saml_idp_initiated_sso_url_name"],
             "authlab-saml",
         )
+        self.assertEqual(
+            saml_client["attributes"]["saml_assertion_consumer_url_post"],
+            "http://127.0.0.1:18090/saml/acs",
+        )
 
 
 if __name__ == "__main__":
