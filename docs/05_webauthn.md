@@ -18,6 +18,27 @@
 ユーザは evil.example にコードを打ち込ませられても、認証器は evil.example 用の署名を
 作らない。ブラウザが本物のオリジンを渡し、RP ID が一致しないから。
 
+## ブラウザ標準 API で動かす
+
+[GitHub Pages の WebAuthn native タブ](https://hjosugi.github.io/auth-lab/) は
+`navigator.credentials.create()` / `get()` を直接呼ぶ。ローカルでは secure context の
+`localhost` を使う。
+
+```bash
+python -m http.server -d docs 8000
+# http://localhost:8000/ を開き、WebAuthn native タブへ
+```
+
+登録後は `allowCredentials` に credential ID を指定する認証と、ID を空にする
+discoverable login（ユーザー名なし認証）を比較できる。ブラウザから返る
+`clientDataJSON`、`attestationObject`、`authenticatorData` を教材 RP が解析し、
+challenge/origin/RP ID hash/UP/UV/署名を検証する。origin と RP ID の不一致を意図的に
+拒否するボタンもある。
+
+CI の `tests/browser/webauthn-e2e.mjs` は Chrome DevTools Protocol の仮想認証器で、
+非 discoverable 登録、resident credential、UV、discoverable login、BE/BS flags、
+origin/RP ID mismatch を本物のブラウザ API に通す。外部サイトや実 credential は使わない。
+
 ## 認証器 (authenticator)
 
 YubiKey / Touch ID / Windows Hello がやること。秘密鍵を持ち、「登録されたオリジンにしか
@@ -75,6 +96,17 @@ JWS の `alg` と同じ教訓。
 クローン（鍵抽出）か古いレスポンスのリプレイ。ただし**同期パスキー**（iCloud/Google）は
 複数デバイスで同じ鍵なので 0 のまま。0 を「クローン」とすると全 iPhone ユーザが締め出される
 ので、条件付き（登録時に非0だった場合のみ）にする。
+
+## Attestation・同期・本番との境界
+
+- consumer passkey の既定は `attestation: "none"`。端末 provenance を必要とする管理用途で
+  `direct` を選ぶ場合は、attestation trust store・メタデータ更新・プライバシー方針が別途必要。
+- BE は backup eligible、BS は現在 backup 済みという信号。同期 credential を許すかは
+  recovery とリスク方針に合わせる。
+- 同期 passkey では sign counter が 0 のまま、または端末間で単調増加しない場合がある。
+  counter 退行はリスク信号として扱い、それだけでアカウントを停止しない。
+- playground は公開鍵をページのメモリだけに保存する。本番 RP は challenge の短期保存と
+  一回限り消費、credential/userHandle の永続化、監査、recovery、複数 credential 管理が必要。
 
 ## パスキーが解決しないこと
 

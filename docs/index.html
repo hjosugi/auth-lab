@@ -26,6 +26,7 @@
   <button class="tab-btn" onclick="showTab('t-passwords', this)">Passwords</button>
   <button class="tab-btn" onclick="showTab('t-authz', this)">Authorization × 5</button>
   <button class="tab-btn" onclick="showTab('t-diagrams', this)">Diagrams</button>
+  <button class="tab-btn" onclick="showTab('t-webauthn-native', this)">WebAuthn native</button>
   <button class="tab-btn" onclick="showTab('t-protocols', this)">SAML·Kerberos·WebAuthn…</button>
   <button class="tab-btn" onclick="showTab('t-attacks', this)">Attacks</button>
   <button class="tab-btn" onclick="showTab('t-refs', this)">References</button>
@@ -490,6 +491,63 @@ document:budget#owner@user:erin</div>
   <div class="note" id="mermaid-status">図をレンダリング中… 表示されない場合は <a href="diagrams.md">docs/diagrams.md</a> をご覧ください（GitHub 上で確実に描画されます）。</div>
 </section>
 
+<!-- ================= NATIVE WEBAUTHN ================= -->
+<section id="t-webauthn-native" class="tab-panel">
+  <h2>ブラウザ標準 WebAuthn / passkey</h2>
+  <p class="lead">シミュレータではなく <code>navigator.credentials.create()</code> と <code>get()</code> を呼び、RP が検証すべき binding と flags を表示します。HTTPS または <code>localhost</code> で実行してください。</p>
+
+  <div class="card demo">
+    <h3>登録と認証 ceremony</h3>
+    <div class="grid2">
+      <div>
+        <label for="webauthn-resident-key">Discoverable credential</label>
+        <select id="webauthn-resident-key">
+          <option value="required">required（ユーザー名なし認証向け）</option>
+          <option value="discouraged">discouraged（allowCredentials 向け）</option>
+        </select>
+      </div>
+      <div>
+        <label for="webauthn-user-verification">User verification</label>
+        <select id="webauthn-user-verification">
+          <option value="required">required（PIN / 生体認証を要求）</option>
+          <option value="preferred">preferred</option>
+          <option value="discouraged">discouraged</option>
+        </select>
+      </div>
+    </div>
+    <label for="webauthn-attestation">Attestation conveyance</label>
+    <select id="webauthn-attestation">
+      <option value="none">none（通常の consumer passkey）</option>
+      <option value="direct">direct（教材では形式の表示のみ）</option>
+    </select>
+    <div class="webauthn-actions" role="group" aria-label="WebAuthn ceremony controls">
+      <button class="act" id="webauthn-register" type="button">1. credential を登録</button>
+      <button class="act" id="webauthn-authenticate" type="button">2. ID 指定で認証</button>
+      <button class="act" id="webauthn-discoverable" type="button">3. ユーザー名なしで認証</button>
+    </div>
+    <div id="webauthn-status" class="out" role="status" aria-live="polite" aria-atomic="true">未実行。登録から始めてください。</div>
+    <div class="note">この教材 RP は登録済み公開鍵をページのメモリだけに保持します。再読み込み後は登録し直してください。秘密鍵は認証器から出ません。</div>
+  </div>
+
+  <div class="card">
+    <h3>Trust binding の negative test</h3>
+    <p>WebAuthn は challenge だけでは不十分です。RP は <code>type</code>、<code>challenge</code>、<code>origin</code>、<code>rpIdHash</code>、UP/UV flags、署名をすべて検証します。</p>
+    <button class="act danger" id="webauthn-origin-negative" type="button">偽 origin を拒否</button>
+    <button class="act danger" id="webauthn-rpid-negative" type="button">無関係な RP ID を拒否</button>
+    <button class="act ghost" id="webauthn-reset" type="button">教材 RP の状態をリセット</button>
+  </div>
+
+  <div class="card">
+    <h3>本番設計で別途決めること</h3>
+    <ul class="tight">
+      <li><b>Attestation:</b> <code>none</code> は端末追跡を避けやすい既定。この教材は形式を表示するだけで attestation chain を信頼しません。端末 provenance を要求する管理環境だけ、プライバシーとメタデータ検証を設計して <code>direct</code> を使います。</li>
+      <li><b>Sync / backup:</b> BE/BS flags は credential が同期可能か、現在 backup 済みかを示します。同期 passkey を許すかは recovery とリスク方針に合わせます。</li>
+      <li><b>Sign counter:</b> 複製検知の補助信号です。同期 passkey や一部認証器は常に 0、または端末間で単調増加しないため、単独でアカウントを停止しません。</li>
+      <li><b>Production:</b> challenge の短期サーバ保存・一回限り消費、credential / userHandle の永続化、失敗監査、recovery、複数 credential 管理が必要です。このページのメモリ内 RP は教材用です。</li>
+    </ul>
+  </div>
+</section>
+
 <!-- ================= PROTOCOLS ================= -->
 <section id="t-protocols" class="tab-panel">
   <h2>SAML · Kerberos · WebAuthn · mTLS · LDAP · SCIM · DPoP</h2>
@@ -509,8 +567,8 @@ document:budget#owner@user:erin</div>
 
   <div class="card">
     <h3>WebAuthn / passkeys <span class="pill impl">implemented</span></h3>
-    <p>A key pair per site; the private key never leaves the authenticator, and the signature is bound to the origin. That origin binding is the phishing resistance: a look-alike domain gets no signature because there is no key for it. The lab has a virtual authenticator and a full relying party (COSE keys, attestation, signature-counter clone detection, syncable-passkey handling).</p>
-    <div class="note">Source: <code>authlab/webauthn/</code> · Drill 11.</div>
+    <p>A key pair per site; the private key never leaves the authenticator, and the signature is bound to the origin. That origin binding is the phishing resistance: a look-alike domain gets no signature because there is no key for it. The lab has a virtual authenticator, a full Python relying party, and a browser-native ceremony that verifies COSE keys, RP ID hash, flags, counters, and assertion signatures.</p>
+    <div class="note">Source: <code>authlab/webauthn/</code> · Drill 11 · <a href="#" onclick="showTab('t-webauthn-native',null);return false;">ブラウザ標準 WebAuthn を開く</a>.</div>
   </div>
 
   <div class="card">
@@ -641,6 +699,7 @@ document:budget#owner@user:erin</div>
 </footer>
 
 <script src="assets/sequences.js"></script>
+<script src="assets/webauthn-lab.js"></script>
 <script src="assets/lab.js"></script>
 <script type="module">
   // Mermaid renders the Diagrams tab. Loaded from a CDN (GitHub Pages allows

@@ -7,9 +7,11 @@
 
 [**GitHub Pages の playground**](https://hjosugi.github.io/auth-lab/) —
 JWT デコード、TOTP 生成、PKCE、パスワードハッシュ、5認可モデル比較、
-OAuth/SAML/Kerberos/WebAuthnの日英sequenceなどを
-**ブラウザ内で本物の暗号処理**（Web Crypto API）で動かせる。ローカルでも
-`docs/index.html` を開けば動く。
+OAuth/SAML/Kerberos/WebAuthnの日英sequence、ブラウザ標準の passkey 登録・認証などを
+**ブラウザ内で本物の暗号処理**（Web Crypto / WebAuthn API）で動かせる。
+ネイティブ WebAuthn は secure context が必要なので、ローカルでは
+`python -m http.server -d docs 8000` を実行して `http://localhost:8000/` を開く。
+それ以外のデモは `docs/index.html` を直接開いても動く。
 
 ## ドキュメント一覧
 
