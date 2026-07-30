@@ -12,6 +12,7 @@ EXCLUDED_PARTS = {
     ".venv",
     "__pycache__",
     "dist",
+    "target",
 }
 EXCLUDED_SUFFIXES = {".pyc", ".pyo"}
 

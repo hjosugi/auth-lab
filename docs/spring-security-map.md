@@ -3,6 +3,10 @@
 このラボで中身を追った後、本番実装ではSpring Securityの検証済み機能へ置き換えます。
 独自JWT validatorや独自OAuth Authorization Serverを本番に持ち込まないことが原則です。
 
+[Java 21 / Spring Security companion](../spring-companion/README.md)では、
+この表のissuer、audience、token type、scope、object ownershipを実際の
+`SecurityFilterChain`、validator、method security、回帰テストへ写経しています。
+
 | ラボ概念 | Spring Security / 関連製品 | 本番で明示する設定 |
 |---|---|---|
 | Password hash | `PasswordEncoder`, `DelegatingPasswordEncoder` | algorithm ID、cost、upgrade方針 |
@@ -42,4 +46,3 @@
 - CORSは認証・認可ではなく、ブラウザのcross-origin read制御。
 - CSRFを無効化してよいのは「JWTだから」ではなく、credential送信方法と
   ブラウザ挙動を分析した結果で決める。
-

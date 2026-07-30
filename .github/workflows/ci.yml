@@ -20,6 +20,14 @@ jobs:
           python-version: "3.12"
       - name: Verify tests, drills, and attack regressions
         run: python scripts/verify.py
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+          cache-dependency-path: spring-companion/pom.xml
+      - name: Verify Spring Security companion
+        run: mvn --batch-mode --file spring-companion/pom.xml verify
       - uses: actions/setup-node@v6
         with:
           node-version: "24"
