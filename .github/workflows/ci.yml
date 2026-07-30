@@ -43,8 +43,11 @@ jobs:
         run: |
           node --check docs/assets/lab.js
           node --check docs/assets/sequences.js
+          node --check docs/assets/webauthn-lab.js
           node --check site/app.js
           node --test tests/browser/*.test.js
+      - name: Verify native WebAuthn with a virtual authenticator
+        run: node tests/browser/webauthn-e2e.mjs
       - name: Build learning bundle
         run: python scripts/build_zip.py
       - uses: actions/upload-artifact@v7

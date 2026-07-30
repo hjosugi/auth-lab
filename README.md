@@ -26,11 +26,13 @@
 
 **[playground](https://hjosugi.github.io/auth-lab/)** — JWT デコード/署名/検証、ライブ TOTP
 生成、PKCE、パスワードハッシュ、5認可モデル比較、OAuth/SAML/Kerberos/WebAuthnの
-日英sequence、`alg=none` 攻撃などを、**ブラウザ内で
-本物の暗号処理**（Web Crypto API）で動かせる。インストール不要、通信も一切なし。
+日英sequence、ブラウザ標準の passkey 登録・認証、`alg=none` 攻撃などを、
+**ブラウザ内で本物の暗号処理**（Web Crypto / WebAuthn API）で動かせる。
+WebAuthn 教材 RP は credential データを外部システムへ送らない。
 
 > GitHub Pages は `.github/workflows/pages.yml` が `docs/` を自動デプロイする。
-> ローカルなら `docs/index.html` を直接開いても動く。
+> ネイティブ WebAuthn は secure context が必要。ローカルでは
+> `python -m http.server -d docs 8000` を実行し、`http://localhost:8000/` を開く。
 
 ## 何が入っているか
 

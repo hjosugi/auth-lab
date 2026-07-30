@@ -87,6 +87,7 @@ button.act {
 button.act.ghost { background: var(--panel2); color: var(--text); }
 button.act.danger { background: var(--bad); }
 button.act:hover { filter: brightness(1.1); }
+button.act:disabled { cursor: not-allowed; filter: grayscale(1); opacity: 0.65; }
 button.act:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible,
 .tab-btn:focus-visible, .sequence-shell:focus-visible {
   outline: 3px solid var(--accent); outline-offset: 3px;
@@ -98,6 +99,7 @@ button.act:focus-visible, select:focus-visible, input:focus-visible, textarea:fo
 .good { color: var(--good); font-weight: 600; }
 .bad { color: var(--bad); font-weight: 600; }
 .warn { color: var(--warn); font-weight: 600; }
+.webauthn-actions { display: flex; flex-wrap: wrap; gap: 4px; }
 
 .jwt-seg { padding: 8px 10px; border-radius: 6px; margin: 4px 0; white-space: pre-wrap; word-break: break-all; }
 .jwt-h { background: rgba(88,166,255,0.12); border-left: 3px solid var(--accent); }

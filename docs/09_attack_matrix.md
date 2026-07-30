@@ -28,7 +28,7 @@
 | 18 | ゴールデンチケット | 権限昇格 | CWE-284 | — | krbtgt鍵の保護と定期ローテーション | `kerberos/kdc.py` (実演) |
 | 19 | Pass-the-ticket | 資格情報再利用 | CWE-294 | — | 短命チケット + ホスト隔離 + 監視 | `kerberos/client.py` (実演) |
 | 20 | パディングオラクル | 暗号 | CWE-696 | — | encrypt-then-MAC + 一様なエラー | `crypto/aes.py` |
-| 21 | WebAuthn オリジン偽装 | フィッシング | CWE-290 | A07:2021 | origin と rpIdHash の完全一致検証 | `webauthn/relying_party.py` |
+| 21 | WebAuthn オリジン偽装 | フィッシング | CWE-290 | A07:2021 | origin と rpIdHash の完全一致検証 | `webauthn/relying_party.py`, `docs/assets/webauthn-lab.js` |
 | 22 | WebAuthn 署名カウンタ退行 | クローン検知 | CWE-294 | — | signCount の単調増加を検証 | `webauthn/relying_party.py` |
 | 23 | JOSE の曲線/署名形式混同 | JWT 偽造・相互運用不全 | CWE-347 | API2:2023 | ES256/384/512 と曲線を固定し、JWS は固定長 R‖S のみ受理 | `jose/jws.py`, `crypto/ec.py` |
 | 24 | Ed25519 小位数鍵 / COSE 型混同 | 署名偽造 | CWE-347 | API2:2023 | 公開鍵の素数位数部分群を検証し、`kty`/`alg`/`crv` を完全一致 | `crypto/ed25519.py`, `webauthn/cose.py` |
@@ -53,6 +53,7 @@ python drills/09_saml.py                   # 15 (XSW) を実演
 python drills/10_kerberos.py               # 16〜19 を実演
 python drills/13_ldap_scim.py              # 12, 13 を実演
 python drills/11_webauthn.py               # 21, 22 を実演
+node tests/browser/webauthn-e2e.mjs         # 21 と UV 拒否をブラウザ仮想認証器で検証
 python -m unittest tests.test_saml_signature # 15 の正規化・方式差し替えnegative test
 python drills/14_advanced_oauth.py          # 25〜31 のbindingを実演
 python -m unittest tests.test_oauth_advanced # 25〜31 の正常系・negative test
