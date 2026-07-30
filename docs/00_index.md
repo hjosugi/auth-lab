@@ -34,6 +34,7 @@ OAuth/SAML/Kerberos/WebAuthnの日英sequenceなどを
 - [11 - 14日ドリル計画](11_14day_plan.md)
 - [12 - 面接用スクリプト（英語）](12_interview_english.md)
 - [13 - 参考サイト・仕様一覧](13_references.md)
+- [15 - Property / fuzz / protocol-state conformance](15_property_fuzz.md)
 
 ## リポジトリ構成
 

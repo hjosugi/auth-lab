@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """One command to check the whole lab is healthy.
 
-Runs the unittest suite, every drill, and the attack regressions, and exits
-non-zero if anything fails. This is the "did I break something" button.
+Runs the unittest suite, every drill, the attack regressions, and the bounded
+property/fuzz campaign. Exits non-zero if anything fails. This is the
+"did I break something" button.
 
     python scripts/verify.py
 """
@@ -34,10 +35,14 @@ def main() -> int:
                        [sys.executable, "-m", "unittest", "discover", "-s", "tests"]))
     results.append(run("drills (run_all)", [sys.executable, "drills/run_all.py"]))
     results.append(run("attack regressions", [sys.executable, "attacks/run_regressions.py"]))
+    results.append(run(
+        "bounded property/fuzz campaign",
+        [sys.executable, "scripts/run_property_fuzz.py"],
+    ))
 
     print(f"\n{'=' * 60}")
     if all(results):
-        print("ALL GREEN — tests, drills, and attack regressions pass.")
+        print("ALL GREEN — all verification gates pass.")
         return 0
     print("SOMETHING FAILED — see the sections above.")
     return 1

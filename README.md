@@ -48,13 +48,15 @@
 | Directory | LDAP、SCIM | bind/search escaping、匿名bind対策、provision/deprovision |
 | Authorization | RBAC、ABAC、ReBAC、Cedar、Rego | decision parity、tenant/deny、cycle/depth、privacy-safe logs |
 | Crypto | RSA、ECDSA(P-256)、AES、CBOR、X.509 CA | FIPS-197 KAT、RFC 8949、`openssl verify` 通過 |
+| Property / fuzz | compact token、XML、SCIM filter、OAuth state | 固定seed、入力/時間上限、replay順序、counterexample最小化 |
 
 ## 5分で動かす
 
 Python 3.11 以上だけで動く。`pip install` は不要。
 
 ```bash
-python scripts/verify.py             # テスト + ドリル + 攻撃回帰を一括検証
+python scripts/verify.py             # テスト + ドリル + 攻撃回帰 + property fuzz
+python scripts/run_property_fuzz.py  # 固定seedの有界property/fuzz campaign
 python drills/run_all.py             # 14本のドリルが全部緑になるのを見る
 python attacks/run_regressions.py    # 危険な入力がすべて拒否されるのを確認
 ```
@@ -64,6 +66,7 @@ python attacks/run_regressions.py    # 危険な入力がすべて拒否され�
 - 自動テストが全件成功する（件数はrunnerが実行時に表示）
 - **14 個のドリル**が成功する
 - 攻撃カタログの全項目が **DEFENDED** になる
+- property/fuzzの全生成caseが成立し、seedとcounterexample artifactが残る
 
 OAuth/OIDC サーバを起動して curl で叩く:
 
@@ -128,6 +131,7 @@ scripts/       一括検証(verify.py)と配布ZIP生成(make_zip.py)
   · [高度なOAuth·FAPI 2.0](docs/14_advanced_oauth_fapi.md)
 - [攻撃対応表（CWE/OWASP）](docs/09_attack_matrix.md) · [Spring Security 対応表](docs/10_spring_security_map.md)
 - [Java 21 / Spring Security companion](spring-companion/README.md) — OIDC、JWT/opaque、method security、脅威モデル
+- [Property / fuzz / protocol-state conformance](docs/15_property_fuzz.md)
 - [14日ドリル計画](docs/11_14day_plan.md) · [面接用スクリプト（英語）](docs/12_interview_english.md) · [参考サイト・仕様一覧](docs/13_references.md)
 
 ## ライセンス

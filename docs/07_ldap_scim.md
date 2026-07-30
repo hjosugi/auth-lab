@@ -68,6 +68,9 @@ DELETE /Users/{id}       削除
   email 再利用で2人のアクセスが混ざる。
 - フィルタ（RFC 7644 §3.4.2）はクエリ言語。バックエンドに注入すれば LDAP と同じ問題
   （auth-lab はパースして値として扱う）。
+- 空、括弧不整合、dangling operator、未知operatorはすべて`SCIMError invalidFilter`へ
+  正規化する。`scripts/run_property_fuzz.py`が有界な生成入力で、内部の`IndexError`等を
+  trust boundaryの外へ漏らさないことを回帰する。
 
 ## 一言で
 
