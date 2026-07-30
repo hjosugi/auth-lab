@@ -44,10 +44,20 @@ class Client:
     # RFC 9449: require a DPoP proof on token requests.
     require_dpop: bool = False
     jwks: dict[str, Any] | None = None  # for private_key_jwt
+    # FAPI 2.0 Security Profile normally prohibits AS-side refresh rotation
+    # for sender-constrained confidential clients.
+    rotate_refresh_tokens: bool = True
+    # CIBA registration metadata. No network call is made by the lab.
+    backchannel_token_delivery_mode: str = "poll"
+    backchannel_client_notification_endpoint: str | None = None
+    # RFC 9701 responses may only disclose token data to registered audiences.
+    introspection_audiences: list[str] = field(default_factory=list)
 
     @property
     def is_public(self) -> bool:
-        return self.token_endpoint_auth_method == "none" or self.client_secret is None
+        # A private_key_jwt or mTLS client has no shared secret but is still
+        # confidential because it authenticates with proof of key possession.
+        return self.token_endpoint_auth_method == "none"
 
 
 @dataclass
@@ -82,6 +92,7 @@ class AuthorizationCode:
     used: bool = False
     resource: list[str] = field(default_factory=list)
     dpop_jkt: str | None = None
+    authorization_details: list[dict[str, Any]] = field(default_factory=list)
 
 
 @dataclass
@@ -99,6 +110,7 @@ class AccessToken:
     cnf_jkt: str | None = None   # DPoP key thumbprint
     cnf_x5t: str | None = None   # mTLS certificate thumbprint
     jti: str = field(default_factory=lambda: random_token(16))
+    authorization_details: list[dict[str, Any]] = field(default_factory=list)
 
 
 @dataclass
@@ -117,6 +129,7 @@ class RefreshToken:
     rotated_to: str | None = None
     cnf_jkt: str | None = None
     cnf_x5t: str | None = None
+    authorization_details: list[dict[str, Any]] = field(default_factory=list)
 
 
 @dataclass

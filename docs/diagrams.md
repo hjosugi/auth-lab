@@ -10,6 +10,7 @@
 - [OIDC: ID トークン vs アクセストークン](#oidc-id-トークン-vs-アクセストークン)
 - [デバイスフロー](#デバイスフロー-rfc-8628)
 - [DPoP 送信者制約](#dpop-送信者制約-rfc-9449)
+- [高度な OAuth / FAPI 2.0](14_advanced_oauth_fapi.md#脅威モデルと追加-binding)
 - [mTLS ハンドシェイク](#mtls-ハンドシェイク)
 - [SAML Web SSO](#saml-web-sso)
 - [XML 署名ラッピング (XSW)](#xml-署名ラッピング-xsw)

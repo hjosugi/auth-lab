@@ -22,8 +22,9 @@ from authlab.crypto import generate_rsa_keypair
 from authlab.jose import HS256, JWK, JWKSet, JWS, JWT, JWTValidator, RS256
 from authlab.jose.errors import JOSEError
 from authlab.oauth import (
-    AuthorizationServer, Client, InvalidGrant, InvalidRequest, InvalidScope,
-    OAuthClient, ResourceServer, Unauthorized, User, pkce,
+    AuthorizationServer, Client, FAPI2SecurityProfile, InvalidGrant, InvalidRequest,
+    InvalidScope, OAuthClient, PushedAuthorizationRequests, ResourceServer,
+    Unauthorized, User, pkce,
 )
 from authlab.oauth.resource_server import Forbidden
 from authlab.util.clock import FrozenClock
@@ -122,6 +123,28 @@ def main() -> int:
     claims = rs.authenticate(f"Bearer {at}")
     must_reject("insufficient scope", lambda: rs.require_scope(claims, "admin"))
     must_reject("BOLA (another user's object)", lambda: rs.require_ownership(claims, "u-bob"))
+
+    print("Advanced OAuth:")
+    server.register_client(Client(
+        client_id="fapi", redirect_uris=["https://fapi.local/cb"],
+        scopes=["openid"], token_endpoint_auth_method="tls_client_auth",
+        tls_client_certificate_bound_access_tokens=True, rotate_refresh_tokens=False,
+    ))
+    fapi_par = PushedAuthorizationRequests(server, clock=clock)
+    fapi = FAPI2SecurityProfile(server, fapi_par)
+    _, fapi_challenge = pkce.generate_pair()
+    pushed = fapi.pushed_authorization_request({
+        "client_id": "fapi", "redirect_uri": "https://fapi.local/cb",
+        "response_type": "code", "scope": "openid", "state": "fapi-state",
+        "code_challenge": fapi_challenge, "code_challenge_method": "S256",
+    }, tls_client_cert_thumbprint="cert-A")
+    must_reject(
+        "PAR front-channel parameter injection",
+        lambda: fapi.authorize({
+            "client_id": "fapi", "request_uri": pushed["request_uri"],
+            "redirect_uri": "https://attacker.invalid/cb",
+        }),
+    )
 
     print("Client:")
     client = OAuthClient(client_id="web-app", redirect_uri="https://app/cb",

@@ -50,8 +50,8 @@
   <main id="main">
     <section class="metric-strip" aria-label="ラボ収録内容">
       <div><strong>14</strong><span>EXECUTABLE DRILLS</span></div>
-      <div><strong>22</strong><span>AUTOMATED TESTS</span></div>
-      <div><strong>16</strong><span>READABLE MODULES</span></div>
+      <div><strong>180+</strong><span>AUTOMATED TESTS</span></div>
+      <div><strong>20+</strong><span>READABLE MODULES</span></div>
       <div><strong>0</strong><span>PYTHON DEPENDENCIES</span></div>
     </section>
 
@@ -181,6 +181,7 @@
       <div class="protocol-grid">
         <article><span>SECRET</span><h3>Password / TOTP</h3><p>知識・共有秘密で本人確認。保管とreplay対策が中心。</p><code>salt · KDF · counter</code></article>
         <article><span>DELEGATION</span><h3>OAuth / OIDC</h3><p>API権限の委譲と、認証イベントのフェデレーション。</p><code>state · PKCE · nonce · aud</code></article>
+        <article><span>HIGH SECURITY</span><h3>FAPI 2.0</h3><p>PAR/JAR/JARM/RAR/CIBAとsender constraintを、SecurityとMessage Signingに分離。</p><code>request_uri · JWS · auth_req_id</code></article>
         <article><span>FEDERATION</span><h3>SAML</h3><p>企業IdPとSPのブラウザSSO。署名対象XMLとmetadataを信頼。</p><code>issuer · ACS · audience</code></article>
         <article><span>TICKETS</span><h3>Kerberos</h3><p>KDCが短寿命ticketを発行し、組織内SSOを実現。</p><code>TGT · service · authenticator</code></article>
         <article><span>PUBLIC KEY</span><h3>WebAuthn</h3><p>origin/RPに束縛された公開鍵credential。phishing耐性。</p><code>challenge · rpIdHash · UV</code></article>
