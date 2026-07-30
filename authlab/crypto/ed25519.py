@@ -1,0 +1,248 @@
+"""Ed25519 (RFC 8032), from scratch.
+
+EdDSA is what ECDSA would look like if it were designed after everyone had
+finished being burned by ECDSA. Three differences carry almost all of it:
+
+1. The nonce is not random. It is `SHA-512(prefix || message)`, where `prefix`
+   is the second half of the hashed private key. There is no RNG in the
+   signing path at all, so the class of bug that took the PS3 signing key and
+   a long line of Bitcoin wallets simply cannot occur here. RFC 6979 retrofits
+   the same idea onto ECDSA; Ed25519 was born with it.
+
+2. The message is hashed *with* the public key and the commitment R, not
+   alone. That binds a signature to the key that produced it, which kills
+   duplicate-signature key-substitution: with plain ECDSA an attacker can
+   sometimes craft a second key that also verifies a captured signature.
+
+3. The curve is a twisted Edwards curve, -x^2 + y^2 = 1 + d x^2 y^2 over
+   2^255 - 19, whose addition formula has no special cases. ECDSA's
+   chord-and-tangent addition needs separate branches for doubling and for
+   the point at infinity, and those branches leak timing. Here one formula
+   covers every pair of points, including a point plus itself.
+
+Where it shows up: `EdDSA` in JOSE (RFC 8037, kty=OKP crv=Ed25519), COSE
+algorithm -8 for WebAuthn authenticators, OpenSSH keys, Signal, and the
+`ssh-ed25519` you almost certainly have in ~/.ssh.
+
+Not constant time. Python big integers branch and allocate on value, and
+`point_mul` below is a plain double-and-add whose timing depends on the
+scalar's bits. Read it as a specification of the maths, never ship it.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import secrets
+from dataclasses import dataclass
+
+# Field: integers mod 2^255 - 19.
+P = 2**255 - 19
+# Group order of the base point. Note the cofactor: the curve has 8*L points,
+# so a decoded point can sit in a small subgroup. Public keys and signature R
+# values are checked for prime-order subgroup membership below; otherwise the
+# identity public key makes a message-independent forgery possible.
+L = 2**252 + 27742317777372353535851937790883648493
+
+# Curve constant d = -121665/121666.
+D = (-121665 * pow(121666, -1, P)) % P
+# sqrt(-1) mod p, needed to recover x from y.
+SQRT_M1 = pow(2, (P - 1) // 4, P)
+
+KEY_SIZE = 32
+SIGNATURE_SIZE = 64
+
+# Extended homogeneous coordinates (X : Y : Z : T) with x = X/Z, y = Y/Z and
+# x*y = T/Z. The redundancy is what removes the special cases from addition.
+_Ext = tuple[int, int, int, int]
+IDENTITY: _Ext = (0, 1, 1, 0)
+
+
+def _recover_x(y: int, sign: int) -> int | None:
+    """Solve the curve equation for x given y and the sign bit."""
+    if y >= P:
+        return None
+    x2 = (y * y - 1) * pow(D * y * y + 1, -1, P) % P
+    if x2 == 0:
+        # y = +-1. Only x = 0 is on the curve, so a set sign bit is a
+        # non-canonical encoding of the same point and must be rejected.
+        return None if sign else 0
+    x = pow(x2, (P + 3) // 8, P)
+    if (x * x - x2) % P != 0:
+        x = x * SQRT_M1 % P
+    if (x * x - x2) % P != 0:
+        return None  # y does not correspond to any point on the curve
+    if (x & 1) != sign:
+        x = P - x
+    return x
+
+
+def _point_add(p: _Ext, q: _Ext) -> _Ext:
+    """Unified twisted-Edwards addition: no branch for doubling or identity."""
+    a = (p[1] - p[0]) * (q[1] - q[0]) % P
+    b = (p[1] + p[0]) * (q[1] + q[0]) % P
+    c = 2 * p[3] * q[3] * D % P
+    d = 2 * p[2] * q[2] % P
+    e, f, g, h = b - a, d - c, d + c, b + a
+    return (e * f % P, g * h % P, f * g % P, e * h % P)
+
+
+def _point_mul(scalar: int, point: _Ext) -> _Ext:
+    """Double-and-add. Not constant time; see the module docstring."""
+    result = IDENTITY
+    while scalar > 0:
+        if scalar & 1:
+            result = _point_add(result, point)
+        point = _point_add(point, point)
+        scalar >>= 1
+    return result
+
+
+def _point_equal(p: _Ext, q: _Ext) -> bool:
+    """Projective equality: cross-multiply instead of normalising."""
+    if (p[0] * q[2] - q[0] * p[2]) % P != 0:
+        return False
+    return (p[1] * q[2] - q[1] * p[2]) % P == 0
+
+
+def _point_compress(point: _Ext) -> bytes:
+    """32 bytes: little-endian y with x's low bit in the top bit."""
+    z_inv = pow(point[2], -1, P)
+    x = point[0] * z_inv % P
+    y = point[1] * z_inv % P
+    return (y | ((x & 1) << 255)).to_bytes(32, "little")
+
+
+def _point_decompress(data: bytes) -> _Ext | None:
+    if len(data) != 32:
+        return None
+    y = int.from_bytes(data, "little")
+    sign = y >> 255
+    y &= (1 << 255) - 1
+    x = _recover_x(y, sign)
+    if x is None:
+        return None
+    return (x, y, 1, x * y % P)
+
+
+_BASE_Y = 4 * pow(5, -1, P) % P
+_BASE_X = _recover_x(_BASE_Y, 0)
+assert _BASE_X is not None  # the base point is fixed by the RFC; a failure here is a typo
+BASE_POINT: _Ext = (_BASE_X, _BASE_Y, 1, _BASE_X * _BASE_Y % P)
+
+
+def _is_prime_order_point(point: _Ext) -> bool:
+    """Accept non-identity points in the subgroup generated by B.
+
+    Merely decoding a point proves it is on the Edwards curve, not that it is
+    in the order-L signing subgroup. In particular, A=identity makes
+    [S]B = R + [k]A independent of both the message and the public key.
+    """
+    return (
+        not _point_equal(point, IDENTITY)
+        and _point_equal(_point_mul(L, point), IDENTITY)
+    )
+
+
+def _sha512_mod_l(data: bytes) -> int:
+    return int.from_bytes(hashlib.sha512(data).digest(), "little") % L
+
+
+def _expand_secret(seed: bytes) -> tuple[int, bytes]:
+    """Split SHA-512(seed) into the clamped scalar and the nonce prefix.
+
+    Clamping does two jobs. Clearing the low three bits makes the scalar a
+    multiple of the cofactor, so a point in a small subgroup contributes
+    nothing. Setting bit 254 and clearing bit 255 fixes the scalar's length,
+    which keeps a variable-time ladder from leaking the top bits.
+    """
+    if len(seed) != KEY_SIZE:
+        raise ValueError(f"Ed25519 seed must be {KEY_SIZE} bytes, got {len(seed)}")
+    digest = hashlib.sha512(seed).digest()
+    scalar = int.from_bytes(digest[:32], "little")
+    scalar &= (1 << 254) - 8
+    scalar |= 1 << 254
+    return scalar, digest[32:]
+
+
+@dataclass(frozen=True)
+class Ed25519PublicKey:
+    """A compressed point, exactly 32 bytes."""
+
+    data: bytes
+
+    def __post_init__(self) -> None:
+        if len(self.data) != KEY_SIZE:
+            raise ValueError(f"Ed25519 public key must be {KEY_SIZE} bytes")
+        point = _point_decompress(self.data)
+        if point is None:
+            raise ValueError("Ed25519 public key is not a canonical curve point")
+        if not _is_prime_order_point(point):
+            raise ValueError("Ed25519 public key is not in the prime-order subgroup")
+
+    def verify(self, message: bytes, signature: bytes) -> bool:
+        return ed25519_verify(self, message, signature)
+
+
+@dataclass(frozen=True)
+class Ed25519PrivateKey:
+    """The 32-byte seed. Everything else is derived from it deterministically.
+
+    RFC 8032 calls this the private key; some libraries call the 64-byte
+    seed||public concatenation the private key instead, which is why copying
+    an Ed25519 key between ecosystems so often produces a length mismatch.
+    """
+
+    seed: bytes
+
+    def __post_init__(self) -> None:
+        if len(self.seed) != KEY_SIZE:
+            raise ValueError(f"Ed25519 seed must be {KEY_SIZE} bytes")
+
+    @property
+    def public(self) -> Ed25519PublicKey:
+        scalar, _ = _expand_secret(self.seed)
+        return Ed25519PublicKey(_point_compress(_point_mul(scalar, BASE_POINT)))
+
+    def sign(self, message: bytes) -> bytes:
+        return ed25519_sign(self, message)
+
+
+def generate_ed25519_keypair() -> Ed25519PrivateKey:
+    return Ed25519PrivateKey(secrets.token_bytes(KEY_SIZE))
+
+
+def ed25519_sign(key: Ed25519PrivateKey, message: bytes) -> bytes:
+    """PureEdDSA over Ed25519. Returns R || S, 64 bytes."""
+    scalar, prefix = _expand_secret(key.seed)
+    public = _point_compress(_point_mul(scalar, BASE_POINT))
+    # The nonce commits to the message and to a secret only we hold. No RNG.
+    r = _sha512_mod_l(prefix + message)
+    r_point = _point_compress(_point_mul(r, BASE_POINT))
+    # Hashing the public key in here is what binds the signature to this key.
+    challenge = _sha512_mod_l(r_point + public + message)
+    s = (r + challenge * scalar) % L
+    return r_point + s.to_bytes(32, "little")
+
+
+def ed25519_verify(key: Ed25519PublicKey, message: bytes, signature: bytes) -> bool:
+    """Check [S]B == R + [k]A. Returns False rather than raising on garbage."""
+    if not isinstance(signature, (bytes, bytearray)) or len(signature) != SIGNATURE_SIZE:
+        return False
+    signature = bytes(signature)
+    point_a = _point_decompress(key.data)
+    if point_a is None:
+        return False
+    r_bytes = signature[:32]
+    point_r = _point_decompress(r_bytes)
+    if point_r is None or not _is_prime_order_point(point_r):
+        return False
+    s = int.from_bytes(signature[32:], "little")
+    if s >= L:
+        # Malleability guard. Without it, S and S + L both verify, so one
+        # signature has many encodings and cannot be used as a unique id.
+        return False
+    challenge = _sha512_mod_l(r_bytes + key.data + message)
+    return _point_equal(
+        _point_mul(s, BASE_POINT),
+        _point_add(point_r, _point_mul(challenge, point_a)),
+    )

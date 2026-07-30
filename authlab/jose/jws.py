@@ -40,6 +40,24 @@ import hmac
 from dataclasses import dataclass
 from typing import Any, Callable, Sequence
 
+from ..crypto.ec import (
+    SECP256R1,
+    SECP384R1,
+    SECP521R1,
+    Curve,
+    ECPrivateKey,
+    ECPublicKey,
+    ecdsa_sign,
+    ecdsa_verify,
+    signature_from_raw,
+    signature_to_raw,
+)
+from ..crypto.ed25519 import (
+    Ed25519PrivateKey,
+    Ed25519PublicKey,
+    ed25519_sign,
+    ed25519_verify,
+)
 from ..crypto.rsa import (
     RSAPrivateKey,
     RSAPublicKey,
@@ -58,8 +76,11 @@ FORBIDDEN_HEADERS = ("jwk", "jku", "x5u", "x5c")
 @dataclass(frozen=True)
 class Algorithm:
     name: str
-    kind: str  # "HMAC" or "RSA"
+    kind: str  # "HMAC", "RSA", "ECDSA", or "EdDSA"
     hash_name: str
+    # Only meaningful for ECDSA: RFC 7518 pins one curve per algorithm name,
+    # so a P-256 key can never be used to satisfy an ES384 header.
+    curve: Curve | None = None
 
     def sign(self, key: Any, signing_input: bytes) -> bytes:
         if self.kind == "HMAC":
@@ -70,6 +91,16 @@ class Algorithm:
             if not isinstance(key, RSAPrivateKey):
                 raise InvalidSignature(f"{self.name} requires an RSAPrivateKey")
             return rsassa_pkcs1_v15_sign(key, signing_input, self.hash_name)
+        if self.kind == "ECDSA":
+            if not isinstance(key, ECPrivateKey):
+                raise InvalidSignature(f"{self.name} requires an ECPrivateKey")
+            self._require_curve(key.curve)
+            # RFC 7518 section 3.4: fixed-width R || S, never DER.
+            return signature_to_raw(ecdsa_sign(key, signing_input, self.hash_name), key.curve)
+        if self.kind == "EdDSA":
+            if not isinstance(key, Ed25519PrivateKey):
+                raise InvalidSignature(f"{self.name} requires an Ed25519PrivateKey")
+            return ed25519_sign(key, signing_input)
         raise InvalidSignature(f"unknown algorithm kind: {self.kind}")
 
     def verify(self, key: Any, signing_input: bytes, signature: bytes) -> bool:
@@ -86,7 +117,33 @@ class Algorithm:
             if not isinstance(key, RSAPublicKey):
                 raise InvalidSignature(f"{self.name} requires an RSAPublicKey")
             return rsassa_pkcs1_v15_verify(key, signing_input, signature, self.hash_name)
+        if self.kind == "ECDSA":
+            if isinstance(key, ECPrivateKey):
+                key = key.public
+            if not isinstance(key, ECPublicKey):
+                raise InvalidSignature(f"{self.name} requires an ECPublicKey")
+            self._require_curve(key.curve)
+            try:
+                parsed = signature_from_raw(signature, key.curve)
+            except ValueError:
+                # Wrong length is a malformed signature, not a crash. A DER
+                # signature pasted into a JWS lands here.
+                return False
+            return ecdsa_verify(key, signing_input, parsed, self.hash_name)
+        if self.kind == "EdDSA":
+            if isinstance(key, Ed25519PrivateKey):
+                key = key.public
+            if not isinstance(key, Ed25519PublicKey):
+                raise InvalidSignature(f"{self.name} requires an Ed25519PublicKey")
+            return ed25519_verify(key, signing_input, signature)
         raise InvalidSignature(f"unknown algorithm kind: {self.kind}")
+
+    def _require_curve(self, curve: Curve) -> None:
+        if self.curve is not None and curve != self.curve:
+            raise InvalidSignature(
+                f"{self.name} is defined over {self.curve.jose_crv}, "
+                f"but the key is on {curve.jose_crv}"
+            )
 
 
 HS256 = Algorithm("HS256", "HMAC", "sha256")
@@ -95,9 +152,23 @@ HS512 = Algorithm("HS512", "HMAC", "sha512")
 RS256 = Algorithm("RS256", "RSA", "sha256")
 RS384 = Algorithm("RS384", "RSA", "sha384")
 RS512 = Algorithm("RS512", "RSA", "sha512")
+# ES512 is P-521 with SHA-512, not "P-512". There is no P-512 curve. The name
+# tracks the hash, and the mismatch trips people up in every JOSE library.
+ES256 = Algorithm("ES256", "ECDSA", "sha256", SECP256R1)
+ES384 = Algorithm("ES384", "ECDSA", "sha384", SECP384R1)
+ES512 = Algorithm("ES512", "ECDSA", "sha512", SECP521R1)
+# RFC 8037. "EdDSA" names the signature scheme; the curve lives in the key
+# (crv=Ed25519), which is why there is exactly one algorithm identifier here.
+EdDSA = Algorithm("EdDSA", "EdDSA", "sha512")
 
 ALGORITHMS: dict[str, Algorithm] = {
-    a.name: a for a in (HS256, HS384, HS512, RS256, RS384, RS512)
+    a.name: a
+    for a in (
+        HS256, HS384, HS512,
+        RS256, RS384, RS512,
+        ES256, ES384, ES512,
+        EdDSA,
+    )
 }
 # Note what is deliberately absent: "none". There is no code path in this
 # module that can produce or accept an unsecured JWS.

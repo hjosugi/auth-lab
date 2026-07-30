@@ -21,16 +21,40 @@ auth-lab は PHC 風の自己記述文字列で保存する:
 
 ```
 $scrypt$n=16384,r=8,p=1$<salt-b64u>$<hash-b64u>
+$argon2id$v=19$m=19456,t=2,p=1$<salt-b64u>$<hash-b64u>
 ```
 
 この形式なら、検証側は「今日のデフォルト」を仮定せず、保存値からアルゴリズムとコストを
 読み取れる。これが原則4を可能にする。
 
+### PBKDF2 / scrypt / Argon2id の違い
+
+| KDF | 攻撃者に払わせる主なコスト | auth-lab での位置づけ |
+|-----|----------------------------|------------------------|
+| PBKDF2-HMAC-SHA256 | CPU（反復回数） | FIPS要件や古い環境との比較用。状態が小さく、GPU/ASICは大量並列化しやすい |
+| scrypt | CPU + メモリ | 標準ライブラリの `hashlib.scrypt`（OpenSSL）で実行する、依存なしの既定値 |
+| Argon2id | CPU + メモリ。前半はデータ非依存、後半はデータ依存の参照 | 新規システムの第一選択。`argon2-cffi` があればネイティブ実装、無ければ教材用の低コスト純Python実装 |
+
+Argon2id の `id` は Argon2i と Argon2d の折衷である。最初のパス前半を
+データ非依存アクセスにしてキャッシュタイミング漏洩を抑え、その後をデータ依存アクセスにして
+time-memory trade-off への耐性を得る。既定の `m=19456,t=2,p=1` は
+[OWASP Password Storage Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html)
+の最低構成。RFC 9106 の低メモリ推奨は別の構成（64 MiB, `t=3,p=4`）である。
+
+`authlab/passwords/argon2.py` は RFC 9106 を読める形で実装した教材であり、
+`Argon2Params.teaching()` の 64 KiB は**保存用途には使えない**。本番パラメータは純Pythonでは
+遅すぎるため意図的に拒否する。実運用では `argon2-cffi` などの監査済みネイティブ実装を使い、
+実機で1回の検証時間と同時ログイン時の総メモリを測って調整する。
+
 ### ユーザ列挙対策（タイミング）
 
 素朴なログインは「存在しないユーザ」なら即座に返り、「パスワード間違い」なら
 ~50ms かかる。この差でユーザ名を列挙できる。`fake_verify` は存在しないユーザに対しても
-本物と同じ時間を消費する（`authlab/passwords/hasher.py`）。
+そのエンドポイントと同じ KDF・コストを消費する（`authlab/passwords/hasher.py`）。
+
+ここで「定数時間」なのは保存済み digest と候補 digest の最終比較であり、純Python暗号全体では
+ない。Python の多倍長整数・分岐・メモリアクセスは値に依存する。`fake_verify` は別の防御として、
+存在するユーザと存在しないユーザの **KDF仕事量** を揃える。
 
 ### pepper
 

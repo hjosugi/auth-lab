@@ -42,9 +42,10 @@ from dataclasses import dataclass, field
 
 from ..crypto.cbor import encode as cbor_encode
 from ..crypto.ec import ECPrivateKey, ecdsa_sign, generate_ec_keypair, signature_to_der
+from ..crypto.ed25519 import Ed25519PrivateKey, ed25519_sign, generate_ed25519_keypair
 from ..util.ct import random_bytes
 from ..util.encoding import b64u_encode
-from .cose import cose_encode_ec2
+from .cose import COSE_EDDSA, COSE_ES256, cose_encode_ec2, cose_encode_okp
 
 FLAG_UP = 0x01
 FLAG_UV = 0x04
@@ -64,10 +65,24 @@ class StoredCredential:
     """What the authenticator keeps for one registration."""
 
     credential_id: bytes
-    private_key: ECPrivateKey
+    private_key: ECPrivateKey | Ed25519PrivateKey
     rp_id: str
     user_handle: bytes
     sign_count: int = 0
+    algorithm: int = COSE_ES256
+
+
+def _credential_signature(key: ECPrivateKey | Ed25519PrivateKey, signed: bytes) -> bytes:
+    """Sign in the wire format WebAuthn expects for this key type.
+
+    The two formats differ and neither is negotiable: ES256 assertions carry a
+    DER SEQUENCE, EdDSA assertions carry the raw 64-byte R||S from RFC 8032.
+    An RP that runs every signature through a DER parser works fine until the
+    first Ed25519 authenticator shows up.
+    """
+    if isinstance(key, Ed25519PrivateKey):
+        return ed25519_sign(key, signed)
+    return signature_to_der(ecdsa_sign(key, signed))
 
 
 @dataclass
@@ -81,6 +96,10 @@ class VirtualAuthenticator:
     # key on several devices. A hardware key does keep one. This flag drives
     # both behaviours so the RP-side clone detection can be demonstrated.
     is_platform_passkey: bool = False
+    # COSE_ES256 (-7) is what almost every shipping authenticator produces.
+    # COSE_EDDSA (-8) appears on newer keys; set this to exercise the RP's
+    # other verification path.
+    algorithm: int = COSE_ES256
 
     def _authenticator_data(
         self, rp_id: str, flags: int, sign_count: int, attested: bytes = b""
@@ -103,7 +122,12 @@ class VirtualAuthenticator:
         attestation: str = "none",
     ) -> dict:
         """The registration ceremony (navigator.credentials.create)."""
-        key = generate_ec_keypair()
+        if self.algorithm == COSE_EDDSA:
+            key: ECPrivateKey | Ed25519PrivateKey = generate_ed25519_keypair()
+        elif self.algorithm == COSE_ES256:
+            key = generate_ec_keypair()
+        else:
+            raise ValueError(f"this authenticator cannot produce alg={self.algorithm}")
         credential_id = random_bytes(32)
 
         client_data = {
@@ -120,7 +144,10 @@ class VirtualAuthenticator:
         if self.is_platform_passkey:
             flags |= FLAG_BE | FLAG_BS
 
-        cose_key = cose_encode_ec2(key.public)
+        if isinstance(key, Ed25519PrivateKey):
+            cose_key = cose_encode_okp(key.public)
+        else:
+            cose_key = cose_encode_ec2(key.public)
         attested = (
             LAB_AAGUID
             + struct.pack(">H", len(credential_id))
@@ -137,8 +164,7 @@ class VirtualAuthenticator:
             # because attestation mainly matters for enterprises that must
             # restrict authenticator models.
             signed = auth_data + hashlib.sha256(client_data_json).digest()
-            signature = signature_to_der(ecdsa_sign(key, signed))
-            att_stmt = {"alg": -7, "sig": signature}
+            att_stmt = {"alg": self.algorithm, "sig": _credential_signature(key, signed)}
             fmt = "packed"
         else:
             att_stmt = {}
@@ -154,6 +180,7 @@ class VirtualAuthenticator:
             rp_id=rp_id,
             user_handle=user_handle,
             sign_count=0,
+            algorithm=self.algorithm,
         )
 
         return {
@@ -214,7 +241,7 @@ class VirtualAuthenticator:
 
         auth_data = self._authenticator_data(rp_id, flags, count)
         signed = auth_data + hashlib.sha256(client_data_json).digest()
-        signature = signature_to_der(ecdsa_sign(credential.private_key, signed))
+        signature = _credential_signature(credential.private_key, signed)
 
         return {
             "id": b64u_encode(credential.credential_id),

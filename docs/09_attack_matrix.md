@@ -30,6 +30,8 @@
 | 20 | パディングオラクル | 暗号 | CWE-696 | — | encrypt-then-MAC + 一様なエラー | `crypto/aes.py` |
 | 21 | WebAuthn オリジン偽装 | フィッシング | CWE-290 | A07:2021 | origin と rpIdHash の完全一致検証 | `webauthn/relying_party.py` |
 | 22 | WebAuthn 署名カウンタ退行 | クローン検知 | CWE-294 | — | signCount の単調増加を検証 | `webauthn/relying_party.py` |
+| 23 | JOSE の曲線/署名形式混同 | JWT 偽造・相互運用不全 | CWE-347 | API2:2023 | ES256/384/512 と曲線を固定し、JWS は固定長 R‖S のみ受理 | `jose/jws.py`, `crypto/ec.py` |
+| 24 | Ed25519 小位数鍵 / COSE 型混同 | 署名偽造 | CWE-347 | API2:2023 | 公開鍵の素数位数部分群を検証し、`kty`/`alg`/`crv` を完全一致 | `crypto/ed25519.py`, `webauthn/cose.py` |
 
 ## 使い方
 
