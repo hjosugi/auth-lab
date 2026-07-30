@@ -193,6 +193,18 @@ async function evaluate(devtools, sessionId, expression) {
   return result.result.value;
 }
 
+async function stopBrowser(browser) {
+  if (!browser || browser.exitCode !== null) return;
+  await new Promise((resolve) => {
+    const force = setTimeout(() => browser.kill("SIGKILL"), 5_000);
+    browser.once("exit", () => {
+      clearTimeout(force);
+      resolve();
+    });
+    browser.kill("SIGTERM");
+  });
+}
+
 async function main() {
   const executable = await findBrowser();
   const profile = await mkdtemp(path.join(os.tmpdir(), "auth-lab-webauthn-"));
@@ -311,9 +323,9 @@ async function main() {
     }));
   } finally {
     devtools?.close();
-    if (browser && browser.exitCode === null) browser.kill("SIGTERM");
+    await stopBrowser(browser);
     await new Promise((resolve) => server.close(resolve));
-    await rm(profile, { recursive: true, force: true });
+    await rm(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   }
 }
 
