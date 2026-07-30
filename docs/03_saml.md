@@ -33,6 +33,31 @@ OAuth より古く、JSON でなく XML で、アサーション全体をブラ�
 JWS はバイト列に署名する。XML-DSig は**木**に署名する。木は直列化の仕方が複数ある
 （属性順・名前空間 prefix・空白・自己終了タグ）。だから正規化 (c14n) を先に行う。
 
+このラボは SAML で一般的な
+[Exclusive XML Canonicalization 1.0](https://www.w3.org/TR/xml-exc-c14n/)
+（exc-c14n）を `authlab/saml/c14n.py` に標準ライブラリだけで実装する。
+ElementTree は wire 上の prefix を失うため、正規化だけは prefix と名前空間軸を保持する
+DOM で行う。実装している要点は次のとおり。
+
+- 要素名または属性名が**可視に利用する**名前空間だけを、その場所で出力する。
+- 署名対象を別の envelope へ移しても、未使用の祖先名前空間や `xml:lang` を取り込まない。
+- QName が属性値にだけ現れる場合は可視と見なされないため、
+  `InclusiveNamespaces PrefixList`（既定名前空間は `#default`）で明示する。
+- 名前空間と属性を仕様順に並べ、空要素を開始・終了タグへ展開し、文字を正規 escape する。
+- 宣言した `CanonicalizationMethod` と `Transform` が exc-c14n でなければ検証を拒否する。
+
+`tests/test_saml_signature.py` は W3C 勧告 2.2 の re-enveloping 例、可視名前空間、
+`PrefixList`、属性順、DTD 拒否、アルゴリズム差し替えを固定ベクタとして確認する。
+さらに `xmlsec1` がある環境では、独立実装との双方向署名を実行できる。
+
+```bash
+python scripts/verify_saml_xmlsec.py
+```
+
+これは教材の相互運用チェックであり、本番の SAML SP でスクラッチ XML 署名実装を使う
+推奨ではない。本番は schema-aware な保守済みライブラリ、信頼済み metadata、
+証明書 rollover、厳格な XML parser 制限まで一体で運用する。
+
 エンベロープ署名の構造:
 
 ```
@@ -63,6 +88,7 @@ JWS はバイト列に署名する。XML-DSig は**木**に署名する。木は
 `verify(doc) -> bool` の後に `doc.find('Assertion')` ならバグる。`verify(doc) -> signed_element`
 なら構造的にバグれない。加えて、署名は文書に1つだけ（2つ目は拒否）、Reference URI が
 ID で一意に解決すること、アルゴリズム固定も強制する。
+正規化方式と transform 列も固定し、宣言と実処理の差、外部 URI、DTD/entity も拒否する。
 
 ## SP が検証すべき9項目（1つでも飛ばすとバイパス）
 

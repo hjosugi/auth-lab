@@ -410,8 +410,8 @@ document:budget#owner@user:erin</div>
 
   <div class="card">
     <h3>SAML 2.0 <span class="pill impl">implemented</span></h3>
-    <p>Enterprise SSO's XML predecessor to OIDC. Same shape: SP↔client, IdP↔OP, Assertion↔ID token, Audience↔aud. The hard part is XML-DSig, because you sign a <i>tree</i>, not a byte string — which is where <b>XML Signature Wrapping</b> lives. authlab's defence: <code>verify_signature</code> returns the element that was signed, so a caller cannot be tricked into reading an unsigned sibling.</p>
-    <div class="note">Source: <code>authlab/saml/</code> · Drill 09 lands a real XSW attack and shows it refused.</div>
+    <p>Enterprise SSO's XML predecessor to OIDC. Same shape: SP↔client, IdP↔OP, Assertion↔ID token, Audience↔aud. The hard part is XML-DSig, because you sign a <i>tree</i>, not a byte string — which is where <b>XML Signature Wrapping</b> lives. authlab implements W3C Exclusive XML Canonicalization, including visible namespaces and <code>InclusiveNamespaces PrefixList</code>. Its verifier returns the element that was signed, so a caller cannot be tricked into reading an unsigned sibling.</p>
+    <div class="note">Source: <code>authlab/saml/</code> · Drill 09 lands a real XSW attack and shows it refused · optional <code>xmlsec1</code> interoperability check.</div>
   </div>
 
   <div class="card">
