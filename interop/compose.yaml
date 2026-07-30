@@ -7,7 +7,7 @@ services:
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: fixture-admin
       KC_BOOTSTRAP_ADMIN_PASSWORD: fixture-only-admin-password
-      JAVA_OPTS_KC_HEAP: "-XX:MaxHeapFreeRatio=30 -XX:MaxRAMPercentage=65"
+      JAVA_OPTS_KC_HEAP: "-XX:MaxRAMPercentage=65"
     mem_limit: 768m
     ports:
       - "127.0.0.1:18080:8080"

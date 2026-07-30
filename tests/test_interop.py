@@ -173,6 +173,9 @@ class TestInteropComposeIsolation(unittest.TestCase):
             with self.subTest(path=path):
                 self.assertIn("fixture-only-", path.read_text(encoding="utf-8"))
 
+    def test_keycloak_heap_override_does_not_conflict_with_image_defaults(self):
+        self.assertNotIn("HeapFreeRatio", self.compose)
+
 
 if __name__ == "__main__":
     unittest.main()
