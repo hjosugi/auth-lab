@@ -17,4 +17,4 @@ authlab.authz       RBAC, ABAC, and ReBAC (Zanzibar-style) engines
 authlab.web         a very small HTTP routing layer over http.server
 """
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"
