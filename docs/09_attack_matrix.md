@@ -22,7 +22,7 @@
 | 12 | LDAP インジェクション | インジェクション | CWE-90 | A03:2021 | フィルタエスケープ + 構文パーサ | `directory/ldap.py` |
 | 13 | LDAP 匿名バインド | 認証バイパス | CWE-287 | A07:2021 | 空パスワードのバインドを拒否 | `directory/ldap.py` |
 | 14 | タイミングによるユーザ列挙 | 情報漏洩 | CWE-208 | A07:2021 | 定数時間 `fake_verify` | `passwords/hasher.py` |
-| 15 | XML 署名ラッピング (XSW) | SAML 偽造 | CWE-347 | A07:2021 | 「署名された要素」を返すAPI設計 | `saml/signature.py` |
+| 15 | XML 署名ラッピング (XSW) / 正規化方式の差し替え | SAML 偽造 | CWE-347 | A07:2021 | 「署名された要素」を返し、exc-c14n・transform・参照IDを固定 | `saml/signature.py`, `saml/c14n.py` |
 | 16 | Kerberoasting | 資格情報窃取 | CWE-916 | — | サービスは長いランダムパスワード / gMSA | `kerberos/kdc.py` (実演) |
 | 17 | AS-REP roasting | 資格情報窃取 | CWE-916 | — | 事前認証(preauth)を無効化しない | `kerberos/kdc.py` (実演) |
 | 18 | ゴールデンチケット | 権限昇格 | CWE-284 | — | krbtgt鍵の保護と定期ローテーション | `kerberos/kdc.py` (実演) |
@@ -41,6 +41,7 @@ python drills/09_saml.py                   # 15 (XSW) を実演
 python drills/10_kerberos.py               # 16〜19 を実演
 python drills/13_ldap_scim.py              # 12, 13 を実演
 python drills/11_webauthn.py               # 21, 22 を実演
+python -m unittest tests.test_saml_signature # 15 の正規化・方式差し替えnegative test
 ```
 
 ## 一番大事な一行

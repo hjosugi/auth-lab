@@ -157,15 +157,18 @@ class ServiceProvider:
         """
         try:
             xml = base64.b64decode(saml_response_b64)
-            response = ET.fromstring(xml)
         except Exception as exc:  # noqa: BLE001
             raise SAMLError(f"malformed SAMLResponse: {exc}") from exc
 
         # 1 + 2. Verify and keep the element that was actually signed.
         try:
-            signed = verify_signature(response, self.idp_certificate_key)
+            signed = verify_signature(xml, self.idp_certificate_key)
         except XMLSignatureError as exc:
             raise SAMLError(f"signature validation failed: {exc}") from exc
+        try:
+            response = ET.fromstring(xml)
+        except Exception as exc:  # noqa: BLE001
+            raise SAMLError(f"malformed SAMLResponse: {exc}") from exc
 
         if signed.tag == f"{{{SAMLP}}}Response":
             assertions = signed.findall(f"{{{SAML}}}Assertion")
@@ -185,7 +188,8 @@ class ServiceProvider:
             raise SAMLError(
                 f"document contains {len(all_assertions)} assertions; refusing (wrapping attack)"
             )
-        if all_assertions[0] is not assertion:
+        assertion_id = assertion.get("ID")
+        if not assertion_id or all_assertions[0].get("ID") != assertion_id:
             raise SAMLError("the assertion in the document is not the one that was signed")
 
         # 3. Issuer

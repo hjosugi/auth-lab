@@ -70,7 +70,8 @@ python -m authlab.server                    # OAuth/OIDC サーバを起動 (:80
 - **Spring Security を使わない**。使うと「動くけど中身が見えない」。
   トークンに触れる全ての行を読める状態にするため、あえて全部スクラッチ。
 - **検証可能**。RFC 4226/6238 の公式テストベクタ、FIPS-197、RFC 8949 に一致。
-  RFC 8032/6979/9106 の署名・KDFベクタにも一致する。X.509 は `openssl verify` を通り、
+  RFC 8032/6979/9106 の署名・KDFベクタ、W3C exc-c14n の re-enveloping 例にも一致する。
+  X.509 は `openssl verify`、SAML 署名は任意の `xmlsec1` 双方向チェックを通り、
   mTLS は本物の TLS ハンドシェイクで動く。
 - **依存なしを維持**。Argon2id は読み解くための低コスト純Python経路を持つ。
   本番コストを使う場合だけ `argon2-cffi` を任意で利用し、未導入でもラボ全体は動く。

@@ -44,6 +44,7 @@ auth-lab を作るのに実際に参照した一次情報と、学習に使え�
 
 ### エンタープライズ
 - [SAML 2.0 Core](https://docs.oasis-open.org/security/saml/v2.0/saml-core-2.0-os.pdf) / [W3C XML-DSig](https://www.w3.org/TR/xmldsig-core/)
+- [W3C Exclusive XML Canonicalization 1.0](https://www.w3.org/TR/xml-exc-c14n/) / [相互運用レポート](https://www.w3.org/Signature/2002/02/01-exc-c14n-interop.html)
 - [RFC 4120](https://datatracker.ietf.org/doc/html/rfc4120) — Kerberos v5 / [RFC 3962](https://datatracker.ietf.org/doc/html/rfc3962) — AES enctypes
 - [RFC 4511](https://datatracker.ietf.org/doc/html/rfc4511) LDAP / [RFC 4515](https://datatracker.ietf.org/doc/html/rfc4515) フィルタ
 - [RFC 7643](https://datatracker.ietf.org/doc/html/rfc7643) / [RFC 7644](https://datatracker.ietf.org/doc/html/rfc7644) — SCIM 2.0

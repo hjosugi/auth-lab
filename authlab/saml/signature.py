@@ -37,31 +37,33 @@ re-query of the document. If your API is `verify(doc) -> bool` followed by
 `doc.find('Assertion')`, you have the bug. If it is
 `verify(doc) -> signed_element`, you cannot have it.
 
-One honest deviation: real SAML uses Exclusive XML Canonicalization
-(exc-c14n, http://www.w3.org/2001/10/xml-exc-c14n#). The standard library
-gives us C14N 2.0 via ElementTree.canonicalize, so that is what we use, and
-we declare it in CanonicalizationMethod. Signatures here are self-consistent
-and structurally identical to real ones; they will not interoperate with a
-production IdP, which would need exc-c14n implemented by hand.
+SAML deployments normally use Exclusive XML Canonicalization 1.0
+(exc-c14n, http://www.w3.org/2001/10/xml-exc-c14n#).  ``saml.c14n`` implements
+the constrained W3C algorithm with the standard library so the algorithm named
+in SignedInfo is the algorithm actually applied.
 """
 
 from __future__ import annotations
 
 import hashlib
-import io
+import base64
+import binascii
+from collections.abc import Iterable
+from xml.dom import Node
+from xml.dom.minidom import Element as DOMElement
 from xml.etree import ElementTree as ET
 
 from ..crypto.rsa import RSAPrivateKey, RSAPublicKey, rsassa_pkcs1_v15_sign, rsassa_pkcs1_v15_verify
-from ..util.encoding import b64u_decode, b64u_encode
+from .c14n import CanonicalizationError, exclusive_canonicalize, parse_xml_document
 
 DS = "http://www.w3.org/2000/09/xmldsig#"
-C14N = "http://www.w3.org/TR/xml-c14n2"          # what we actually use
-EXC_C14N = "http://www.w3.org/2001/10/xml-exc-c14n#"  # what production SAML uses
+EXC_C14N = "http://www.w3.org/2001/10/xml-exc-c14n#"
 RSA_SHA256 = "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"
 SHA256 = "http://www.w3.org/2001/04/xmlenc#sha256"
 ENVELOPED = "http://www.w3.org/2000/09/xmldsig#enveloped-signature"
 
 ET.register_namespace("ds", DS)
+ET.register_namespace("ec", EXC_C14N)
 
 
 class XMLSignatureError(Exception):
@@ -70,71 +72,153 @@ class XMLSignatureError(Exception):
 
 def _b64(data: bytes) -> str:
     """XML-DSig uses standard base64 with padding, not base64url."""
-    import base64
-
     return base64.b64encode(data).decode("ascii")
 
 
 def _unb64(text: str) -> bytes:
-    import base64
-
-    return base64.b64decode("".join(text.split()))
-
-
-def canonicalize(element: ET.Element) -> bytes:
-    """Serialise an element canonically (C14N 2.0)."""
-    raw = ET.tostring(element, encoding="utf-8")
-    return ET.canonicalize(xml_data=raw.decode("utf-8"), strip_text=False).encode("utf-8")
+    try:
+        return base64.b64decode("".join(text.split()), validate=True)
+    except (binascii.Error, ValueError) as exc:
+        raise XMLSignatureError("invalid base64 in signature") from exc
 
 
-def _digest_without_signature(element: ET.Element) -> bytes:
+def canonicalize(
+    element: ET.Element | DOMElement | bytes | str,
+    inclusive_prefixes: Iterable[str] = (),
+) -> bytes:
+    """Serialise an element with Exclusive XML Canonicalization 1.0."""
+
+    return exclusive_canonicalize(element, inclusive_prefixes)
+
+
+def _digest_without_signature(
+    element: ET.Element | DOMElement,
+    inclusive_prefixes: Iterable[str] = (),
+    signature: DOMElement | None = None,
+) -> bytes:
     """Hash an element with its own <Signature> removed (enveloped transform).
 
     We copy the tree first. Mutating the caller's document to compute a digest
     is how you end up with a "verified" document that no longer contains what
     was verified.
     """
-    clone = ET.fromstring(ET.tostring(element, encoding="utf-8"))
-    for parent in clone.iter():
-        for child in list(parent):
-            if child.tag == f"{{{DS}}}Signature":
-                parent.remove(child)
-    return hashlib.sha256(canonicalize(clone)).digest()
+    if isinstance(element, DOMElement):
+        excluded = (signature,) if signature is not None else ()
+        serialized = exclusive_canonicalize(
+            element,
+            inclusive_prefixes,
+            exclude_elements=excluded,
+        )
+    else:
+        dom = parse_xml_document(ET.tostring(element, encoding="utf-8"))
+        signatures = dom.getElementsByTagNameNS(DS, "Signature")
+        serialized = exclusive_canonicalize(
+            dom.documentElement,
+            inclusive_prefixes,
+            exclude_elements=signatures,
+        )
+    return hashlib.sha256(serialized).digest()
 
 
-def sign_element(element: ET.Element, key: RSAPrivateKey, reference_id: str,
-                 certificate_b64: str | None = None) -> ET.Element:
+def _prefix_list(parent: DOMElement) -> tuple[str, ...]:
+    values = [
+        child.getAttribute("PrefixList")
+        for child in parent.childNodes
+        if child.nodeType == Node.ELEMENT_NODE
+        and child.namespaceURI == EXC_C14N
+        and child.localName == "InclusiveNamespaces"
+    ]
+    if len(values) > 1:
+        raise XMLSignatureError("multiple InclusiveNamespaces parameters")
+    return tuple(values[0].split()) if values else ()
+
+
+def _direct_children(parent: DOMElement, namespace: str, local_name: str) -> list[DOMElement]:
+    return [
+        child
+        for child in parent.childNodes
+        if child.nodeType == Node.ELEMENT_NODE
+        and child.namespaceURI == namespace
+        and child.localName == local_name
+    ]
+
+
+def _one_child(parent: DOMElement, namespace: str, local_name: str) -> DOMElement:
+    matches = _direct_children(parent, namespace, local_name)
+    if len(matches) != 1:
+        raise XMLSignatureError(f"expected exactly one {local_name}, found {len(matches)}")
+    return matches[0]
+
+
+def _append_prefix_list(parent: ET.Element, inclusive_prefixes: tuple[str, ...]) -> None:
+    if inclusive_prefixes:
+        ET.SubElement(
+            parent,
+            f"{{{EXC_C14N}}}InclusiveNamespaces",
+            {"PrefixList": " ".join(inclusive_prefixes)},
+        )
+
+
+def sign_element(
+    element: ET.Element,
+    key: RSAPrivateKey,
+    reference_id: str,
+    certificate_b64: str | None = None,
+    inclusive_prefixes: Iterable[str] = (),
+) -> ET.Element:
     """Add an enveloped signature to `element`, which must carry ID=reference_id."""
     if element.get("ID") != reference_id:
         raise XMLSignatureError(f"element ID {element.get('ID')!r} != {reference_id!r}")
 
-    digest = _digest_without_signature(element)
+    prefixes = tuple(inclusive_prefixes)
+    digest = _digest_without_signature(element, prefixes)
 
     signature = ET.Element(f"{{{DS}}}Signature")
     signed_info = ET.SubElement(signature, f"{{{DS}}}SignedInfo")
-    ET.SubElement(signed_info, f"{{{DS}}}CanonicalizationMethod", {"Algorithm": C14N})
+    canonicalization_method = ET.SubElement(
+        signed_info,
+        f"{{{DS}}}CanonicalizationMethod",
+        {"Algorithm": EXC_C14N},
+    )
+    _append_prefix_list(canonicalization_method, prefixes)
     ET.SubElement(signed_info, f"{{{DS}}}SignatureMethod", {"Algorithm": RSA_SHA256})
     reference = ET.SubElement(signed_info, f"{{{DS}}}Reference", {"URI": f"#{reference_id}"})
     transforms = ET.SubElement(reference, f"{{{DS}}}Transforms")
     ET.SubElement(transforms, f"{{{DS}}}Transform", {"Algorithm": ENVELOPED})
-    ET.SubElement(transforms, f"{{{DS}}}Transform", {"Algorithm": C14N})
+    canonicalization_transform = ET.SubElement(
+        transforms,
+        f"{{{DS}}}Transform",
+        {"Algorithm": EXC_C14N},
+    )
+    _append_prefix_list(canonicalization_transform, prefixes)
     ET.SubElement(reference, f"{{{DS}}}DigestMethod", {"Algorithm": SHA256})
     ET.SubElement(reference, f"{{{DS}}}DigestValue").text = _b64(digest)
 
-    signature_value = rsassa_pkcs1_v15_sign(key, canonicalize(signed_info), "sha256")
-    ET.SubElement(signature, f"{{{DS}}}SignatureValue").text = _b64(signature_value)
+    signature_value_element = ET.SubElement(signature, f"{{{DS}}}SignatureValue")
 
     if certificate_b64:
         key_info = ET.SubElement(signature, f"{{{DS}}}KeyInfo")
         x509_data = ET.SubElement(key_info, f"{{{DS}}}X509Data")
         ET.SubElement(x509_data, f"{{{DS}}}X509Certificate").text = certificate_b64
 
-    # An enveloped signature is the first child of what it signs.
+    # An enveloped signature is the first child of what it signs.  Insert it
+    # before canonicalizing SignedInfo so inherited namespaces named by an
+    # InclusiveNamespaces PrefixList are in scope exactly as they will be on
+    # the wire.
     element.insert(0, signature)
+    dom = parse_xml_document(ET.tostring(element, encoding="utf-8"))
+    dom_signatures = dom.getElementsByTagNameNS(DS, "Signature")
+    dom_signed_info = _one_child(dom_signatures[0], DS, "SignedInfo")
+    signature_value = rsassa_pkcs1_v15_sign(
+        key,
+        canonicalize(dom_signed_info, prefixes),
+        "sha256",
+    )
+    signature_value_element.text = _b64(signature_value)
     return element
 
 
-def verify_signature(document: ET.Element, key: RSAPublicKey) -> ET.Element:
+def verify_signature(document: ET.Element | bytes | str, key: RSAPublicKey) -> ET.Element:
     """Verify and RETURN THE SIGNED ELEMENT.
 
     Returning the element rather than a boolean is the anti-XSW measure. A
@@ -149,7 +233,22 @@ def verify_signature(document: ET.Element, key: RSAPublicKey) -> ET.Element:
       * the algorithm is the one we expect, read from configuration rather
         than dispatched on -- the XML equivalent of alg=none
     """
-    signatures = [e for e in document.iter() if e.tag == f"{{{DS}}}Signature"]
+    try:
+        if isinstance(document, ET.Element):
+            raw = ET.tostring(document, encoding="utf-8")
+        else:
+            raw = document
+        dom = parse_xml_document(raw)
+    except CanonicalizationError as exc:
+        raise XMLSignatureError(f"malformed XML: {exc}") from exc
+    except Exception as exc:  # noqa: BLE001 - normalize parser failures at the trust boundary
+        raise XMLSignatureError(f"malformed XML: {exc}") from exc
+
+    signatures = [
+        element
+        for element in dom.getElementsByTagNameNS(DS, "Signature")
+        if isinstance(element, DOMElement)
+    ]
     if not signatures:
         raise XMLSignatureError("document is not signed")
     if len(signatures) > 1:
@@ -158,21 +257,24 @@ def verify_signature(document: ET.Element, key: RSAPublicKey) -> ET.Element:
         )
     signature = signatures[0]
 
-    signed_info = signature.find(f"{{{DS}}}SignedInfo")
-    if signed_info is None:
-        raise XMLSignatureError("missing SignedInfo")
+    signed_info = _one_child(signature, DS, "SignedInfo")
 
-    method = signed_info.find(f"{{{DS}}}SignatureMethod")
-    if method is None or method.get("Algorithm") != RSA_SHA256:
+    canonicalization_method = _one_child(signed_info, DS, "CanonicalizationMethod")
+    if canonicalization_method.getAttribute("Algorithm") != EXC_C14N:
+        raise XMLSignatureError("unexpected CanonicalizationMethod")
+    signed_info_prefixes = _prefix_list(canonicalization_method)
+
+    method = _one_child(signed_info, DS, "SignatureMethod")
+    if method.getAttribute("Algorithm") != RSA_SHA256:
         raise XMLSignatureError(
-            f"unexpected SignatureMethod: {method.get('Algorithm') if method is not None else None}"
+            f"unexpected SignatureMethod: {method.getAttribute('Algorithm')!r}"
         )
-    digest_method = signed_info.find(f"{{{DS}}}Reference/{{{DS}}}DigestMethod")
-    if digest_method is None or digest_method.get("Algorithm") != SHA256:
+    reference = _one_child(signed_info, DS, "Reference")
+    digest_method = _one_child(reference, DS, "DigestMethod")
+    if digest_method.getAttribute("Algorithm") != SHA256:
         raise XMLSignatureError("unexpected DigestMethod")
 
-    reference = signed_info.find(f"{{{DS}}}Reference")
-    uri = reference.get("URI", "") if reference is not None else ""
+    uri = reference.getAttribute("URI")
     if not uri.startswith("#") or len(uri) < 2:
         # An empty URI means "the whole document" and an external URI would
         # make the verifier fetch attacker-controlled content. Neither is
@@ -180,7 +282,11 @@ def verify_signature(document: ET.Element, key: RSAPublicKey) -> ET.Element:
         raise XMLSignatureError(f"unsupported Reference URI: {uri!r}")
     reference_id = uri[1:]
 
-    matches = [e for e in document.iter() if e.get("ID") == reference_id]
+    matches = [
+        element
+        for element in dom.getElementsByTagName("*")
+        if isinstance(element, DOMElement) and element.getAttribute("ID") == reference_id
+    ]
     if len(matches) != 1:
         # Duplicate IDs are the other half of several wrapping variants: the
         # verifier resolves one, the application reads the other.
@@ -188,25 +294,52 @@ def verify_signature(document: ET.Element, key: RSAPublicKey) -> ET.Element:
     signed_element = matches[0]
 
     # The signature must be inside the element it claims to sign.
-    if signature not in list(signed_element):
+    if signature.parentNode is not signed_element:
         raise XMLSignatureError("signature is not enveloped in the referenced element")
 
-    digest_value = reference.find(f"{{{DS}}}DigestValue")
-    if digest_value is None or not digest_value.text:
+    transforms = _one_child(reference, DS, "Transforms")
+    transform_elements = _direct_children(transforms, DS, "Transform")
+    algorithms = [transform.getAttribute("Algorithm") for transform in transform_elements]
+    if algorithms != [ENVELOPED, EXC_C14N]:
+        raise XMLSignatureError(f"unexpected transforms: {algorithms!r}")
+    digest_prefixes = _prefix_list(transform_elements[1])
+
+    digest_value = _one_child(reference, DS, "DigestValue")
+    digest_text = "".join(
+        child.nodeValue or ""
+        for child in digest_value.childNodes
+        if child.nodeType in (Node.TEXT_NODE, Node.CDATA_SECTION_NODE)
+    )
+    if not digest_text.strip():
         raise XMLSignatureError("missing DigestValue")
 
     from ..util.ct import constant_time_equals
 
-    actual_digest = _digest_without_signature(signed_element)
-    if not constant_time_equals(actual_digest, _unb64(digest_value.text)):
+    actual_digest = _digest_without_signature(
+        signed_element,
+        digest_prefixes,
+        signature,
+    )
+    if not constant_time_equals(actual_digest, _unb64(digest_text)):
         raise XMLSignatureError("digest mismatch: the referenced element was modified")
 
-    signature_value = signature.find(f"{{{DS}}}SignatureValue")
-    if signature_value is None or not signature_value.text:
+    signature_value = _one_child(signature, DS, "SignatureValue")
+    signature_text = "".join(
+        child.nodeValue or ""
+        for child in signature_value.childNodes
+        if child.nodeType in (Node.TEXT_NODE, Node.CDATA_SECTION_NODE)
+    )
+    if not signature_text.strip():
         raise XMLSignatureError("missing SignatureValue")
     if not rsassa_pkcs1_v15_verify(
-        key, canonicalize(signed_info), _unb64(signature_value.text), "sha256"
+        key,
+        canonicalize(signed_info, signed_info_prefixes),
+        _unb64(signature_text),
+        "sha256",
     ):
         raise XMLSignatureError("SignatureValue does not verify")
 
-    return signed_element
+    # Return a fresh ElementTree created from the canonical bytes of exactly
+    # the verified subtree.  This preserves the return-the-signed-element
+    # anti-XSW API without leaking an unsigned sibling back to the caller.
+    return ET.fromstring(canonicalize(signed_element, digest_prefixes))
