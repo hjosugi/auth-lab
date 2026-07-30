@@ -25,7 +25,8 @@
 ## ▶ ブラウザで試す
 
 **[playground](https://hjosugi.github.io/auth-lab/)** — JWT デコード/署名/検証、ライブ TOTP
-生成、PKCE、パスワードハッシュ、5認可モデル比較、`alg=none` 攻撃などを、**ブラウザ内で
+生成、PKCE、パスワードハッシュ、5認可モデル比較、OAuth/SAML/Kerberos/WebAuthnの
+日英sequence、`alg=none` 攻撃などを、**ブラウザ内で
 本物の暗号処理**（Web Crypto API）で動かせる。インストール不要、通信も一切なし。
 
 > GitHub Pages は `.github/workflows/pages.yml` が `docs/` を自動デプロイする。

@@ -6,7 +6,8 @@
 ## ブラウザで試す
 
 [**GitHub Pages の playground**](https://hjosugi.github.io/auth-lab/) —
-JWT デコード、TOTP 生成、PKCE、パスワードハッシュ、5認可モデル比較などを
+JWT デコード、TOTP 生成、PKCE、パスワードハッシュ、5認可モデル比較、
+OAuth/SAML/Kerberos/WebAuthnの日英sequenceなどを
 **ブラウザ内で本物の暗号処理**（Web Crypto API）で動かせる。ローカルでも
 `docs/index.html` を開けば動く。
 
