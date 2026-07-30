@@ -29,6 +29,6 @@ node --check docs/assets/lab.js
 node --check site/app.js
 ```
 
-`scripts/verify.py` runs 108 tests, 13 drills, and 15 attack regressions. If
+`scripts/verify.py` runs the full unittest suite, 13 drills, and 15 attack regressions. If
 protocol behavior changes, add a success test and at least one relevant negative
 test. Keep `docs/09_attack_matrix.md` and `docs/00_index.md` synchronized.

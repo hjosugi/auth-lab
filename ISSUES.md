@@ -19,7 +19,7 @@
 
 | # | タイトル | ラベル | 概要 |
 |---|----------|--------|------|
-| [#4](https://github.com/hjosugi/auth-lab/issues/4) | CI: GitHub Actions で verify.py を実行 | enhancement, good first issue | push/PR で 108テスト+13ドリル+攻撃回帰を自動実行 |
+| [#4](https://github.com/hjosugi/auth-lab/issues/4) | CI: GitHub Actions で verify.py を実行 | enhancement, good first issue | push/PR で全unittest+13ドリル+攻撃回帰を自動実行 |
 | [#5](https://github.com/hjosugi/auth-lab/issues/5) | SAML: exc-c14n を実装して本番 IdP と相互運用 | enhancement | 排他的正規化を実装し実 IdP と繋げる |
 | [#7](https://github.com/hjosugi/auth-lab/issues/7) | Playground を Pyodide で実 Python 実行に | enhancement | ブラウザで authlab 本体を動かす REPL タブ |
 | [#11](https://github.com/hjosugi/auth-lab/issues/11) | EdDSA(Ed25519) と ES256 の JOSE/WebAuthn 対応 | enhancement | ES256 を JWS に接続、Ed25519 を RFC 8032 で追加 |

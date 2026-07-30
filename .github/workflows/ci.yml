@@ -18,7 +18,7 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-      - name: Verify 108 tests, 13 drills, and 15 attack regressions
+      - name: Verify tests, drills, and attack regressions
         run: python scripts/verify.py
       - uses: actions/setup-node@v6
         with:

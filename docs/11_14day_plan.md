@@ -94,7 +94,7 @@
 - チェック: mTLS が本物の TLS ハンドシェイクで動くのを確認
 
 ### Day 14 — 総仕上げ
-- 実行: `python -m unittest discover -s tests`（108テスト全緑）+ `python drills/run_all.py`
+- 実行: `python -m unittest discover -s tests`（全unittest成功）+ `python drills/run_all.py`
 - 読む: `docs/09_attack_matrix.md` を上から音読
 - 仕上げ: `docs/12_interview_english.md` を英語で通しで説明（録音して聞く）
 - チェック: 攻撃対応表22項目を、防御理由つきで空で言える
