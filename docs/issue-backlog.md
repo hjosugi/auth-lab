@@ -31,8 +31,8 @@
 **Goal:** KeycloakまたはSpring Authorization Server、OpenLDAP、MIT Kerberos、
 SAML IdPを起動し、教材実装の概念を実製品のwire flowへ対応付ける。
 
-**実装:** [`interop/`](../interop/) と
-[`scripts/run_interop.py`](../scripts/run_interop.py)。
+**実装:** [`interop/`](https://github.com/hjosugi/auth-lab/tree/main/interop) と
+[`scripts/run_interop.py`](https://github.com/hjosugi/auth-lab/blob/main/scripts/run_interop.py)。
 外部portを公開しないinternal Docker networkでKeycloak 26.7.0、OpenLDAP、MIT
 Kerberosと専用runnerを起動する。OIDC/JWKS、SAML/XML-DSig、LDAP bind/search、
 Kerberos AS/TGSの正常系と誤credential拒否を実行し、mask済みJSONL evidenceだけを
@@ -84,7 +84,7 @@ CI artifactへ保存する。実行手順とauthlab sourceの対応は
 
 **Goal:** parserと状態遷移へproperty test/fuzzingを追加する。
 
-**実装:** [`scripts/run_property_fuzz.py`](../scripts/run_property_fuzz.py) と
+**実装:** [`scripts/run_property_fuzz.py`](https://github.com/hjosugi/auth-lab/blob/main/scripts/run_property_fuzz.py) と
 [`docs/15_property_fuzz.md`](15_property_fuzz.md)。固定/派生seedで5 propertyを
 有界生成し、OAuthの不正遷移と任意順replayを検証する。失敗入力はdelta-minimizeし、
 seed、元入力、最小入力をCI artifactへ常に保存する。
@@ -102,7 +102,7 @@ seed、元入力、最小入力をCI artifactへ常に保存する。
 
 **Goal:** 本ラボの検証項目を本番向けSpring Security構成へ写経する。
 
-**実装:** [`spring-companion/`](../spring-companion/README.md)。OIDC session、
+**実装:** [`spring-companion/`](https://github.com/hjosugi/auth-lab/blob/main/spring-companion/README.md)。OIDC session、
 JWT/opaque resource server、method securityを分離した3本のfilter chainと、
 issuer/audience/type/scope/ownership、key rotation、metadata/JWKS outageの
 success/negative testをJava 21で実行する。Pythonラボは引き続き依存なしで独立する。

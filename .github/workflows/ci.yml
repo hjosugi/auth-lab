@@ -67,6 +67,14 @@ jobs:
           path: .tmp/browser-evidence
           if-no-files-found: warn
           retention-days: 14
+      # The site is built by MkDocs, but pages.yml only runs on main -- without
+      # this, a broken doc link would not surface until after merge, which is
+      # how the site came to serve raw Markdown in the first place.
+      - name: Install the docs toolchain
+        run: pip install -r requirements-docs.txt
+      - name: Verify the site builds with no broken links
+        run: python -m mkdocs build --strict
+
       - name: Build learning bundle
         run: python scripts/build_zip.py
       - uses: actions/upload-artifact@v7

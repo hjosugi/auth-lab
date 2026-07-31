@@ -1,0 +1,134 @@
+# MkDocs turns docs/*.md into a real site.
+#
+# Why this exists: GitHub Pages here is deployed from a static artifact
+# (upload-pages-artifact -> deploy-pages), so nothing was converting Markdown
+# to HTML. Every .md link out of the playground landed on raw markdown text --
+# including the 14-day plan and the attack matrix, i.e. the two documents a
+# learner is most likely to open. MkDocs is the build step that was missing.
+#
+# The playground stays at the site root: docs/index.html is copied verbatim, so
+# https://hjosugi.github.io/auth-lab/ is unchanged. The prose lives beside it as
+# themed, searchable, Japanese pages.
+
+site_name: auth-lab
+site_description: 認証・認可を、バイト列・署名・チケット・トークン・ポリシーの流れから理解する実行可能ラボ
+site_url: https://hjosugi.github.io/auth-lab/
+repo_url: https://github.com/hjosugi/auth-lab
+repo_name: hjosugi/auth-lab
+edit_uri: edit/main/docs/
+copyright: MIT License
+
+docs_dir: docs
+# NOT "site": the repository already has a site/ directory holding the other
+# playground build, and MkDocs deletes site_dir on every build.
+site_dir: _site
+use_directory_urls: true
+
+theme:
+  name: material
+  language: ja
+  icon:
+    repo: fontawesome/brands/github
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.sections
+    - navigation.top
+    - navigation.indexes
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.action.edit
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-night
+        name: ダークモードに切り替え
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: ライトモードに切り替え
+
+plugins:
+  - search:
+      lang:
+        # Japanese needs its own segmenter; without this, search only matches
+        # whole-space-delimited tokens and is useless for Japanese prose.
+        - ja
+        - en
+
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+      toc_depth: 3
+      # Python-Markdown's default slugify strips non-ASCII, which turns every
+      # Japanese heading into an empty anchor and breaks all the in-page links.
+      # This is the GitHub-compatible slugify, so #認可モデル keeps working.
+      slugify: !!python/object/apply:pymdownx.slugs.slugify {kwds: {case: lower}}
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.superfences:
+      custom_fences:
+        # Renders ```mermaid blocks with Material's bundled Mermaid. No CDN,
+        # so the diagrams work under the site's strict asset policy and offline.
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/hjosugi/auth-lab
+
+# Ordered as a learning path, not alphabetically. The compatibility redirect
+# stubs (attack-matrix.md, references.md, ...) are deliberately left out of the
+# nav: they exist only so older external links keep resolving.
+nav:
+  - プレイグラウンド: index.html
+  - はじめに:
+      - 目次: 00_index.md
+      - 図集（フロー図）: diagrams.md
+  - 基礎:
+      - 土台（パスワード・MFA・セッション）: 01_foundations.md
+      - JOSE・OAuth・OIDC: 02_jose_oauth_oidc.md
+      - 高度な OAuth / FAPI 2.0: 14_advanced_oauth_fapi.md
+  - エンタープライズ:
+      - SAML: 03_saml.md
+      - Kerberos: 04_kerberos.md
+      - WebAuthn / パスキー: 05_webauthn.md
+      - mTLS と DPoP: 06_mtls_dpop.md
+      - LDAP と SCIM: 07_ldap_scim.md
+  - 認可:
+      - 認可モデル（RBAC/ABAC/ReBAC）: 08_authz.md
+  - 攻撃と検証:
+      - 攻撃対応表（CWE / OWASP）: 09_attack_matrix.md
+      - プロパティ・ファズ検証: 15_property_fuzz.md
+      - 実プロダクト相互運用: interoperability.md
+  - 学習と実務:
+      - 14日学習計画: 11_14day_plan.md
+      - Spring Security 対応表: 10_spring_security_map.md
+      - 面接用スクリプト（英語）: 12_interview_english.md
+      - ブラウザで Python を動かす: 16_pyodide.md
+      - 参考サイト・仕様一覧: 13_references.md
+
+watch:
+  - docs

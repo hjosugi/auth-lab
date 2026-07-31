@@ -109,13 +109,13 @@ unit testやCompose構文検査の成功を、実製品flowの成功とは扱い
 
 ## sourceを追う
 
-- runnerとredaction: [`scripts/run_interop.py`](../scripts/run_interop.py)
-- local topology: [`interop/compose.yaml`](../interop/compose.yaml)
-- Keycloak realm: [`interop/keycloak/auth-lab-interop-realm.json`](../interop/keycloak/auth-lab-interop-realm.json)
-- OpenLDAP fixture: [`interop/openldap/`](../interop/openldap/)
-- MIT Kerberos fixture: [`interop/kerberos/`](../interop/kerberos/)
-- isolated protocol client: [`interop/runner/`](../interop/runner/)
-- unit/negative checks: [`tests/test_interop.py`](../tests/test_interop.py)
+- runnerとredaction: [`scripts/run_interop.py`](https://github.com/hjosugi/auth-lab/blob/main/scripts/run_interop.py)
+- local topology: [`interop/compose.yaml`](https://github.com/hjosugi/auth-lab/blob/main/interop/compose.yaml)
+- Keycloak realm: [`interop/keycloak/auth-lab-interop-realm.json`](https://github.com/hjosugi/auth-lab/blob/main/interop/keycloak/auth-lab-interop-realm.json)
+- OpenLDAP fixture: [`interop/openldap/`](https://github.com/hjosugi/auth-lab/tree/main/interop/openldap)
+- MIT Kerberos fixture: [`interop/kerberos/`](https://github.com/hjosugi/auth-lab/tree/main/interop/kerberos)
+- isolated protocol client: [`interop/runner/`](https://github.com/hjosugi/auth-lab/tree/main/interop/runner)
+- unit/negative checks: [`tests/test_interop.py`](https://github.com/hjosugi/auth-lab/blob/main/tests/test_interop.py)
 
 製品側の起動方法は
 [Keycloak container guide](https://www.keycloak.org/server/containers) と

@@ -1,0 +1,9 @@
+# Documentation build only. The lab itself has no runtime dependencies and
+# still runs on the standard library alone -- nothing here is needed to run
+# authlab, the drills, the attacks, or the tests.
+#
+# Pinned so a site build cannot start failing because an upstream release
+# changed its Markdown or theme behaviour.
+mkdocs==1.6.1
+mkdocs-material==9.7.7
+pymdown-extensions==11.0.1

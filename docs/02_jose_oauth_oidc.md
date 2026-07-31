@@ -1,7 +1,7 @@
 # 02 - JOSE / OAuth 2.0 + Security BCP / OIDC
 
 > 実装: `authlab/jose/`, `authlab/oauth/`, `authlab/oidc/` / ドリル: `drills/03_jwt.py`〜`drills/07_dpop.py`
-> 図: [JWT構造](diagrams.md#jwt-の構造) / [認可コード+PKCE](diagrams.md#oauth-21-認可コード--pkce) / [リフレッシュ再利用検知](diagrams.md#リフレッシュトークン-ローテーション--再利用検知) / [ID vs アクセストークン](diagrams.md#oidc-id-トークン-vs-アクセストークン) / [DPoP](diagrams.md#dpop-送信者制約-rfc-9449) / [リソースサーバ8ステップ](diagrams.md#リソースサーバの8ステップ)
+> 図: [JWT構造](diagrams.md#jwt-の構造) / [認可コード+PKCE](diagrams.md#oauth-20-security-bcp-認可コード--pkce) / [リフレッシュ再利用検知](diagrams.md#リフレッシュトークン-ローテーション--再利用検知) / [ID vs アクセストークン](diagrams.md#oidc-id-トークン-vs-アクセストークン) / [DPoP](diagrams.md#dpop-送信者制約-rfc-9449) / [リソースサーバ8ステップ](diagrams.md#リソースサーバの8ステップ)
 
 ## JOSE (JWS / JWT / JWK)
 
@@ -39,7 +39,7 @@ BASE64URL(header) . BASE64URL(payload) . BASE64URL(signature)
 
 ### 署名アルゴリズム表
 
-実装: [`authlab/jose/jws.py`](../authlab/jose/jws.py) の `ALGORITHMS`。
+実装: [`authlab/jose/jws.py`](https://github.com/hjosugi/auth-lab/blob/main/authlab/jose/jws.py) の `ALGORITHMS`。
 
 | alg | 種別 | 鍵型 (JWK `kty`) | 曲線 / 鍵 | ハッシュ | 署名長 | 備考 |
 |-----|------|------------------|-----------|----------|--------|------|
@@ -55,7 +55,7 @@ JOSE は固定長の生 `R‖S`（RFC 7518 §3.4）、X.509 と WebAuthn は可�
 DER `SEQUENCE{INTEGER r, INTEGER s}`。DER は r/s の最上位ビットが立つと
 `0x00` が前置されるので長さが署名ごとに変わる。passkey バックエンドの
 「署名が検証できない」の大半はこの変換漏れ。変換は
-[`signature_to_raw` / `signature_to_der`](../authlab/crypto/ec.py) にある。
+[`signature_to_raw` / `signature_to_der`](https://github.com/hjosugi/auth-lab/blob/main/authlab/crypto/ec.py) にある。
 
 **曲線は alg に固定されている。** `ES384` ヘッダに P-256 鍵、は仕様違反であり、
 本実装は `Algorithm._require_curve` で拒否する。JWKS 側でも `crv` と座標長の
@@ -66,7 +66,7 @@ DER `SEQUENCE{INTEGER r, INTEGER s}`。DER は r/s の最上位ビットが立�
 EdDSA はノンスを `SHA-512(prefix ‖ message)` として導出するので、署名経路に RNG が
 存在しない。さらにメッセージを**公開鍵ごと**ハッシュするため、署名を別の鍵に
 付け替える duplicate-signature key substitution も塞がっている。
-本実装は [`authlab/crypto/ed25519.py`](../authlab/crypto/ed25519.py)（RFC 8032 準拠、
+本実装は [`authlab/crypto/ed25519.py`](https://github.com/hjosugi/auth-lab/blob/main/authlab/crypto/ed25519.py)（RFC 8032 準拠、
 テストベクタ一致）。32バイトなら何でも公開鍵として受けるのではなく、canonical な曲線点か、
 素数位数の署名部分群に属するかも検証する。恒等点のような小位数鍵を許すと、検証式から
 メッセージと公開鍵の束縛が消えるためである。

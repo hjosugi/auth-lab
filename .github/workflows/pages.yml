@@ -5,6 +5,8 @@ on:
     branches: ["main"]
     paths:
       - "docs/**"
+      - "mkdocs.yml"
+      - "requirements-docs.txt"
       - ".github/workflows/pages.yml"
   workflow_dispatch:
 
@@ -31,12 +33,22 @@ jobs:
           python-version: "3.12"
       - name: Build browser Python source bundle
         run: python scripts/build_pyodide_bundle.py
+
+      # Docs-only build dependency. The lab itself still needs no pip install;
+      # this runs here so docs/*.md becomes real HTML instead of being served
+      # as raw Markdown, which is what the site did before.
+      - name: Install the docs toolchain
+        run: pip install -r requirements-docs.txt
+
+      - name: Build the site (MkDocs, strict)
+        run: python -m mkdocs build --strict
+
       - uses: actions/configure-pages@v6
         with:
           enablement: true
       - uses: actions/upload-pages-artifact@v5
         with:
-          path: docs
+          path: _site
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5

@@ -3,7 +3,7 @@
 このラボで中身を追った後、本番実装ではSpring Securityの検証済み機能へ置き換えます。
 独自JWT validatorや独自OAuth Authorization Serverを本番に持ち込まないことが原則です。
 
-[Java 21 / Spring Security companion](../spring-companion/README.md)では、
+[Java 21 / Spring Security companion](https://github.com/hjosugi/auth-lab/tree/main/spring-companion)では、
 この表のissuer、audience、token type、scope、object ownershipを実際の
 `SecurityFilterChain`、validator、method security、回帰テストへ写経しています。
 

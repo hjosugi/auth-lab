@@ -81,7 +81,7 @@ WebAuthn は公開鍵を JWK ではなく COSE (CBOR) で運ぶ。整数ラベ�
 
 **署名フォーマットが alg ごとに違う。** すべての署名を DER パーサに通す RP は、
 最初の Ed25519 認証器が現れた瞬間に落ちる。本実装は保存済み鍵の型で分岐する
-（[`verify_credential_signature`](../authlab/webauthn/relying_party.py)）。
+（[`verify_credential_signature`](https://github.com/hjosugi/auth-lab/blob/main/authlab/webauthn/relying_party.py)）。
 **アルゴリズムは検証対象のメッセージからではなく、登録時に保存した鍵から決める** —
 JWS の `alg` と同じ教訓。
 
