@@ -9,7 +9,16 @@ drill red instead of quietly lying.
 
 from __future__ import annotations
 
+import os
 import sys
+
+# Every drill imports this module before it imports authlab, so putting the
+# repo root on sys.path here is what makes `python drills/03_jwt.py` work from
+# a clean checkout. Without it the drills only run under something that has
+# already set PYTHONPATH, which is not how the README tells you to run them.
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _ROOT not in sys.path:
+    sys.path.insert(0, _ROOT)
 
 GREEN = "\033[32m"
 RED = "\033[31m"

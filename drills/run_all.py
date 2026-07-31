@@ -7,7 +7,10 @@ import os
 import sys
 import traceback
 
-sys.path.insert(0, os.path.dirname(__file__))
+_HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, _HERE)
+# The repo root too, so `python drills/run_all.py` works without PYTHONPATH.
+sys.path.insert(1, os.path.dirname(_HERE))
 
 DRILLS = [
     "01_passwords",
