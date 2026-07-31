@@ -32,10 +32,21 @@
 タブでは Pyodide の WebAssembly CPython 上で、このリポジトリの `authlab/` 自体を実行する。
 WebAuthn 教材 RP は credential データを外部システムへ送らない。
 
-> GitHub Pages は `.github/workflows/pages.yml` が `docs/` を自動デプロイする。
+サイトには**日本語の解説ページ**も同居している。playground がルート、
+[目次](https://hjosugi.github.io/auth-lab/00_index/)以下に全プロトコルの解説が並び、
+検索も日本語で効く。playground の「はじめに」タブに、どのタブをどの順に触るかの
+順路と、各ステップに対応する解説へのリンクがある。
+
+> GitHub Pages は `.github/workflows/pages.yml` が MkDocs でビルドして公開する。
 > ネイティブ WebAuthn は secure context が必要。ローカルでは
 > `python scripts/build_pyodide_bundle.py`、`python -m http.server -d docs 8000` の順に
 > 実行し、`http://localhost:8000/` を開く。
+> 解説ページも含めて確認するなら（生成にのみ使う依存）:
+>
+> ```bash
+> pip install -r requirements-docs.txt
+> mkdocs serve     # http://127.0.0.1:8000/
+> ```
 
 ## 何が入っているか
 

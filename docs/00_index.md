@@ -34,7 +34,7 @@ OAuth/SAML/Kerberos/WebAuthnの日英sequence、ブラウザ標準の passkey �
 ### リファレンス
 - [09 - 攻撃対応表（CWE / OWASP マッピング）](09_attack_matrix.md)
 - [10 - Spring Security 対応表](10_spring_security_map.md)
-- [Java 21 / Spring Security companion](../spring-companion/README.md) — OIDC login、2種類のresource server、method security
+- [Java 21 / Spring Security companion](https://github.com/hjosugi/auth-lab/blob/main/spring-companion/README.md) — OIDC login、2種類のresource server、method security
 - [11 - 14日ドリル計画](11_14day_plan.md)
 - [12 - 面接用スクリプト（英語）](12_interview_english.md)
 - [13 - 参考サイト・仕様一覧](13_references.md)

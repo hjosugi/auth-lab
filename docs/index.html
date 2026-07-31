@@ -17,64 +17,88 @@
 </header>
 
 <nav class="tabs" role="tablist" aria-label="auth-lab playground">
-  <button class="tab-btn active" role="tab" aria-selected="true" aria-controls="t-start" data-tab-target="t-start" onclick="showTab('t-start', this)">Start here</button>
-  <button class="tab-btn" role="tab" aria-selected="false" aria-controls="t-sequences" data-tab-target="t-sequences" tabindex="-1" onclick="showTab('t-sequences', this)">Flows × 4 / 日英</button>
-  <button class="tab-btn" role="tab" aria-selected="false" aria-controls="t-interop" data-tab-target="t-interop" tabindex="-1" onclick="showTab('t-interop', this)">Real interop × 4</button>
+  <button class="tab-btn active" role="tab" aria-selected="true" aria-controls="t-start" data-tab-target="t-start" onclick="showTab('t-start', this)">はじめに</button>
+  <button class="tab-btn" role="tab" aria-selected="false" aria-controls="t-sequences" data-tab-target="t-sequences" tabindex="-1" onclick="showTab('t-sequences', this)">フロー図解 ×4</button>
+  <button class="tab-btn" role="tab" aria-selected="false" aria-controls="t-interop" data-tab-target="t-interop" tabindex="-1" onclick="showTab('t-interop', this)">実プロダクト連携 ×4</button>
   <button class="tab-btn" role="tab" aria-selected="false" aria-controls="t-jwt" data-tab-target="t-jwt" tabindex="-1" onclick="showTab('t-jwt', this)">JWT</button>
   <button class="tab-btn" role="tab" aria-selected="false" aria-controls="t-totp" data-tab-target="t-totp" tabindex="-1" onclick="showTab('t-totp', this)">TOTP / MFA</button>
   <button class="tab-btn" role="tab" aria-selected="false" aria-controls="t-oauth" data-tab-target="t-oauth" tabindex="-1" onclick="showTab('t-oauth', this)">OAuth / OIDC</button>
   <button class="tab-btn" role="tab" aria-selected="false" aria-controls="t-pkce" data-tab-target="t-pkce" tabindex="-1" onclick="showTab('t-pkce', this)">PKCE</button>
-  <button class="tab-btn" role="tab" aria-selected="false" aria-controls="t-passwords" data-tab-target="t-passwords" tabindex="-1" onclick="showTab('t-passwords', this)">Passwords</button>
-  <button class="tab-btn" role="tab" aria-selected="false" aria-controls="t-authz" data-tab-target="t-authz" tabindex="-1" onclick="showTab('t-authz', this)">Authorization × 5</button>
-  <button class="tab-btn" role="tab" aria-selected="false" aria-controls="t-diagrams" data-tab-target="t-diagrams" tabindex="-1" onclick="showTab('t-diagrams', this)">Diagrams</button>
-  <button class="tab-btn" role="tab" aria-selected="false" aria-controls="t-webauthn-native" data-tab-target="t-webauthn-native" tabindex="-1" onclick="showTab('t-webauthn-native', this)">WebAuthn native</button>
+  <button class="tab-btn" role="tab" aria-selected="false" aria-controls="t-passwords" data-tab-target="t-passwords" tabindex="-1" onclick="showTab('t-passwords', this)">パスワード</button>
+  <button class="tab-btn" role="tab" aria-selected="false" aria-controls="t-authz" data-tab-target="t-authz" tabindex="-1" onclick="showTab('t-authz', this)">認可モデル ×5</button>
+  <button class="tab-btn" role="tab" aria-selected="false" aria-controls="t-diagrams" data-tab-target="t-diagrams" tabindex="-1" onclick="showTab('t-diagrams', this)">図集</button>
+  <button class="tab-btn" role="tab" aria-selected="false" aria-controls="t-webauthn-native" data-tab-target="t-webauthn-native" tabindex="-1" onclick="showTab('t-webauthn-native', this)">WebAuthn 実機</button>
   <button class="tab-btn" role="tab" aria-selected="false" aria-controls="t-pyodide" data-tab-target="t-pyodide" tabindex="-1" onclick="showTab('t-pyodide', this)">Python REPL</button>
   <button class="tab-btn" role="tab" aria-selected="false" aria-controls="t-protocols" data-tab-target="t-protocols" tabindex="-1" onclick="showTab('t-protocols', this)">SAML·Kerberos·WebAuthn…</button>
-  <button class="tab-btn" role="tab" aria-selected="false" aria-controls="t-attacks" data-tab-target="t-attacks" tabindex="-1" onclick="showTab('t-attacks', this)">Attacks</button>
-  <button class="tab-btn" role="tab" aria-selected="false" aria-controls="t-refs" data-tab-target="t-refs" tabindex="-1" onclick="showTab('t-refs', this)">References</button>
+  <button class="tab-btn" role="tab" aria-selected="false" aria-controls="t-attacks" data-tab-target="t-attacks" tabindex="-1" onclick="showTab('t-attacks', this)">攻撃</button>
+  <button class="tab-btn" role="tab" aria-selected="false" aria-controls="t-refs" data-tab-target="t-refs" tabindex="-1" onclick="showTab('t-refs', this)">参考資料</button>
 </nav>
 
 <main>
 
 <!-- ================= START ================= -->
 <section id="t-start" class="tab-panel active">
-  <h2>The whole map, in one breath</h2>
-  <p class="lead">Authentication answers <b>who are you</b>. Authorization answers <b>may you</b>. Everything below is one of those two, plus the plumbing that carries the answer between systems.</p>
+  <h2>全体像を一息で</h2>
+  <p class="lead">認証（Authentication）は<b>あなたは誰か</b>に答え、認可（Authorization）は
+  <b>それをしてよいか</b>に答えます。以下はすべてそのどちらか、あるいは答えをシステム間で
+  運ぶための配管です。</p>
 
   <div class="card">
-    <h3>The mental model</h3>
+    <h3>頭の中の地図</h3>
     <table>
-      <tr><th>Layer</th><th>Question</th><th>Protocols here</th></tr>
-      <tr><td>Credential</td><td>Prove who you are</td><td>Passwords, TOTP/HOTP, WebAuthn/passkeys, client certs (mTLS)</td></tr>
-      <tr><td>Federation</td><td>Let one system vouch for you to another</td><td>OIDC, SAML, Kerberos</td></tr>
-      <tr><td>Token</td><td>Carry the proof around</td><td>JWT/JOSE, JWKS, DPoP, opaque tokens + introspection</td></tr>
-      <tr><td>Delegation</td><td>Let an app act for you, scoped</td><td>OAuth 2.0 + Security BCP (code+PKCE, refresh, client credentials, device)</td></tr>
-      <tr><td>Authorization</td><td>Decide if this action is allowed</td><td>RBAC, ABAC, ReBAC, Cedar, Rego</td></tr>
-      <tr><td>Provisioning</td><td>Create / disable accounts across systems</td><td>SCIM, LDAP</td></tr>
+      <tr><th>層</th><th>問い</th><th>ここで扱うプロトコル</th></tr>
+      <tr><td>Credential<br><small>資格情報</small></td><td>本人であることを示す</td><td>パスワード, TOTP/HOTP, WebAuthn/パスキー, クライアント証明書 (mTLS)</td></tr>
+      <tr><td>Federation<br><small>連携</small></td><td>あるシステムが別のシステムへ保証する</td><td>OIDC, SAML, Kerberos</td></tr>
+      <tr><td>Token<br><small>トークン</small></td><td>証明を持ち運ぶ</td><td>JWT/JOSE, JWKS, DPoP, opaque token + introspection</td></tr>
+      <tr><td>Delegation<br><small>委譲</small></td><td>アプリに、範囲を限って代理させる</td><td>OAuth 2.0 + Security BCP（code+PKCE, refresh, client credentials, device）</td></tr>
+      <tr><td>Authorization<br><small>認可</small></td><td>この操作を許してよいか判断する</td><td>RBAC, ABAC, ReBAC, Cedar, Rego</td></tr>
+      <tr><td>Provisioning<br><small>プロビジョニング</small></td><td>各システムのアカウントを作る/止める</td><td>SCIM, LDAP</td></tr>
     </table>
   </div>
 
   <div class="card">
-    <h3>How to use this lab</h3>
+    <h3>どこから始めるか</h3>
+    <p>タブは15個ありますが、順番に意味があります。<b>上から順に</b>進めば、前提知識が
+    揃った状態で次に進めます。各行の解説リンクは日本語のドキュメントです。</p>
+    <table>
+      <tr><th>順</th><th>やること</th><th>解説</th></tr>
+      <tr><td>1</td><td>まず全体像をつかむ（このページ）</td><td><a href="00_index/">目次</a> / <a href="diagrams/">図集</a></td></tr>
+      <tr><td>2</td><td><a href="#" onclick="showTab('t-passwords',null);return false;">Passwords</a> → <a href="#" onclick="showTab('t-totp',null);return false;">TOTP</a> で「本人確認」の基礎</td><td><a href="01_foundations/">土台</a></td></tr>
+      <tr><td>3</td><td><a href="#" onclick="showTab('t-jwt',null);return false;">JWT</a> でトークンの構造と3大偽造</td><td><a href="02_jose_oauth_oidc/">JOSE・OAuth・OIDC</a></td></tr>
+      <tr><td>4</td><td><a href="#" onclick="showTab('t-pkce',null);return false;">PKCE</a> → <a href="#" onclick="showTab('t-oauth',null);return false;">OAuth / OIDC</a> が山場</td><td><a href="02_jose_oauth_oidc/">同上</a></td></tr>
+      <tr><td>5</td><td><a href="#" onclick="showTab('t-sequences',null);return false;">Flows × 4</a> で4プロトコルを1メッセージずつ追う</td><td><a href="diagrams/">図集</a></td></tr>
+      <tr><td>6</td><td><a href="#" onclick="showTab('t-authz',null);return false;">Authorization</a> で「valid token ≠ authorized」</td><td><a href="08_authz/">認可モデル</a></td></tr>
+      <tr><td>7</td><td><a href="#" onclick="showTab('t-protocols',null);return false;">SAML·Kerberos·WebAuthn</a> でエンタープライズ側</td><td><a href="03_saml/">SAML</a> / <a href="04_kerberos/">Kerberos</a> / <a href="05_webauthn/">WebAuthn</a></td></tr>
+      <tr><td>8</td><td><a href="#" onclick="showTab('t-attacks',null);return false;">Attacks</a> で「なぜ防げるか」を言葉にする</td><td><a href="09_attack_matrix/">攻撃対応表</a></td></tr>
+    </table>
+    <div class="note">2週間で一周する設計の <b><a href="11_14day_plan/">14日学習計画</a></b> が、
+    毎日のドリルと「声に出して説明できるか」のチェックつきで用意してあります。
+    腰を据えて学ぶならこれが本線です。</div>
+  </div>
+
+  <div class="card">
+    <h3>このラボの使い方</h3>
     <ul class="tight">
-      <li><b>This page</b> — click through the tabs. Each has live demos you can poke; the cryptography is real (Web Crypto), not mocked.</li>
-      <li><b>The Python library</b> (<code>authlab/</code>) — every protocol implemented from scratch on the standard library only. Read the source; every line that touches a token is meant to be readable in one sitting.</li>
-      <li><b>Drills</b> (<code>drills/</code>) — 14 narrated, self-checking walkthroughs. <code>python drills/run_all.py</code>.</li>
-      <li><b>Attacks</b> (<code>attacks/</code>) — each attack shown breaking a naive implementation, then refused by authlab.</li>
-      <li><b>Tests</b> (<code>tests/</code>) — the full unittest suite, including published RFC and FIPS vectors. <code>python -m unittest discover -s tests</code>.</li>
-      <li><b>14-day plan</b> — see the <a href="#" onclick="showTab('t-refs',null);return false;">References</a> tab for the study schedule and the Spring Security mapping.</li>
+      <li><b>このページ</b> — タブを触る。暗号処理は Web Crypto による本物で、モックではありません。</li>
+      <li><b>日本語ドキュメント</b> — <a href="00_index/">目次</a>から全プロトコルの解説へ。
+        なぜその検証が要るのかを、攻撃と対で説明しています。</li>
+      <li><b>Python 実装</b>（<code>authlab/</code>）— 全プロトコルを標準ライブラリだけでゼロから実装。
+        トークンに触れる行は、一度に読み切れる分量で書いてあります。</li>
+      <li><b>ドリル</b>（<code>drills/</code>）— 14本の自己検証つき実行スクリプト。<code>python drills/run_all.py</code></li>
+      <li><b>攻撃</b>（<code>attacks/</code>）— 素朴な実装が破れる様子を見せてから、authlab が拒否する様子を見せます。</li>
+      <li><b>テスト</b>（<code>tests/</code>）— RFC / FIPS の公式テストベクタを含む全 unittest。</li>
     </ul>
   </div>
 
   <div class="card">
-    <h3>Run the real server locally</h3>
+    <h3>ローカルで動かす</h3>
     <div class="out mono">git clone https://github.com/hjosugi/auth-lab
 cd auth-lab
-python -m authlab.server          # OAuth/OIDC AS on :8080
-# then, in another shell:
-curl http://127.0.0.1:8080/.well-known/openid-configuration
-python drills/run_all.py          # watch every protocol run green</div>
-    <div class="note">No <code>pip install</code>. Python 3.11+ standard library only.</div>
+python drills/run_all.py          # 全プロトコルが緑になるのを見る
+python -m authlab.server          # OAuth/OIDC 認可サーバ (:8080)
+# 別のシェルで:
+curl http://127.0.0.1:8080/.well-known/openid-configuration</div>
+    <div class="note"><code>pip install</code> 不要。Python 3.11+ の標準ライブラリのみで動きます。</div>
   </div>
 </section>
 
@@ -153,7 +177,7 @@ python drills/run_all.py          # watch every protocol run green</div>
 # OIDC · SAML · LDAP · Kerberos の成功/拒否を検査
 # redacted trace: .tmp/interop/trace.jsonl</div>
     <div class="interop-links">
-      <a class="act" href="interoperability.md">実行手順と対応表</a>
+      <a class="act" href="interoperability/">実行手順と対応表</a>
       <a class="act ghost" href="https://github.com/hjosugi/auth-lab/actions/workflows/interop.yml">実製品CIを見る</a>
     </div>
   </div>
@@ -196,39 +220,39 @@ python drills/run_all.py          # watch every protocol run green</div>
 <!-- ================= JWT ================= -->
 <section id="t-jwt" class="tab-panel">
   <h2>JWT / JOSE</h2>
-  <p class="lead">A JWT is three base64url segments — <code>header.payload.signature</code> — joined by dots. The signature covers the exact text of the first two segments. Reading it once removes most of the mystery.</p>
+  <p class="lead">JWT は <code>header.payload.signature</code> の3つの base64url をドットで繋いだもの。署名は<b>先頭2セグメントのテキストそのもの</b>を覆います。一度中身を見れば、ほとんどの謎は消えます。</p>
 
   <div class="card demo">
-    <h3>Decode any JWT</h3>
-    <label>Paste a JWT (or use the default)</label>
+    <h3>JWT をデコードする</h3>
+    <label>JWT を貼り付け（既定値のままでも可）</label>
     <textarea id="jwt-input">eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhbGljZSIsImF1ZCI6ImFwaTovL29yZGVycyIsInNjb3BlIjoib3JkZXJzOnJlYWQiLCJleHAiOjIwMDAwMDAwMDB9.4s0h2pM8oM_1xN7C6r5vHhE7Vq0kZ8Xw3wZ8bJ8y5A</textarea>
-    <button class="act" onclick="decodeJwt()">Decode &amp; inspect</button>
+    <button class="act" onclick="decodeJwt()">デコードして中身を見る</button>
     <div class="out" id="jwt-decoded"></div>
   </div>
 
   <div class="card demo">
-    <h3>Sign &amp; verify (HS256, real HMAC)</h3>
+    <h3>署名と検証（HS256・本物の HMAC）</h3>
     <div class="grid2">
-      <div><label>secret</label><input type="text" id="jwt-secret" value="a-shared-secret-at-least-32-bytes"></div>
-      <div><label>payload (JSON)</label><input type="text" id="jwt-payload" value='{"sub":"alice","scope":"orders:read"}'></div>
+      <div><label>秘密鍵 (secret)</label><input type="text" id="jwt-secret" value="a-shared-secret-at-least-32-bytes"></div>
+      <div><label>ペイロード (JSON)</label><input type="text" id="jwt-payload" value='{"sub":"alice","scope":"orders:read"}'></div>
     </div>
-    <button class="act" onclick="jwtSignVerify()">Sign, then verify with right &amp; wrong secret</button>
+    <button class="act" onclick="jwtSignVerify()">署名して、正しい鍵と誤った鍵で検証する</button>
     <div class="out" id="jwt-signverify"></div>
   </div>
 
   <div class="card demo">
-    <h3>The <code>alg=none</code> forgery</h3>
-    <p>The classic JWT attack. Press the button: it rewrites the payload to <code>sub=admin</code> and sets <code>alg=none</code> with an empty signature, then loads it into the decoder above.</p>
-    <button class="act danger" onclick="forgeAlgNone()">Forge an alg=none admin token</button>
+    <h3><code>alg=none</code> による偽造</h3>
+    <p>JWT の古典的攻撃。ボタンを押すと、ペイロードを <code>sub=admin</code> に書き換え、<code>alg=none</code> と空署名を設定して、上のデコーダに読み込みます。</p>
+    <button class="act danger" onclick="forgeAlgNone()">alg=none の管理者トークンを偽造する</button>
     <div class="note" id="jwt-attack-note"></div>
   </div>
 
   <div class="card">
-    <h3>What the library refuses, and why</h3>
+    <h3>ライブラリが拒否するもの、その理由</h3>
     <ul class="tight">
-      <li><b>alg=none</b> — <code>JWS.verify</code> requires an explicit algorithm allow-list with no default; 'none' is never in it.</li>
-      <li><b>RS256→HS256 confusion</b> — keys are typed, so an RSA public key can never be fed to HMAC as a secret.</li>
-      <li><b>jwk / jku / x5u headers</b> — refused outright; a token may never nominate its own verification key.</li>
+      <li><b>alg=none</b> — <code>JWS.verify</code> は既定値のない明示的な許可アルゴリズム一覧を必須にしており、'none' はそこに入りません。</li>
+      <li><b>RS256→HS256 混同</b> — 鍵は型付きなので、RSA 公開鍵を HMAC の秘密鍵として渡すことができません。</li>
+      <li><b>jwk / jku / x5u ヘッダ</b> — 即座に拒否。トークンが自分の検証鍵を指名することは許しません。</li>
       <li><b>Claim validation</b> — <code>iss</code>, <code>aud</code> (must contain us), <code>exp</code>, <code>nbf</code>, <code>iat</code>, and OIDC <code>nonce</code> are all checked, not just the signature.</li>
     </ul>
     <div class="note">Source: <code>authlab/jose/jws.py</code>, <code>authlab/jose/jwt.py</code></div>
@@ -238,13 +262,13 @@ python drills/run_all.py          # watch every protocol run green</div>
 <!-- ================= TOTP ================= -->
 <section id="t-totp" class="tab-panel">
   <h2>TOTP / MFA</h2>
-  <p class="lead">TOTP is HOTP with the counter replaced by <code>floor(now / 30)</code>. Everything hard about it is operational: clock drift, replay, and the fact that the secret is symmetric.</p>
+  <p class="lead">TOTP は HOTP のカウンタを <code>floor(now / 30)</code> に置き換えただけ。難しいのは運用面です — 時計のずれ、リプレイ、そして<b>秘密が共有鍵である</b>という事実。</p>
 
   <div class="card demo">
-    <h3>Live authenticator</h3>
-    <label>base32 secret (default is a common test secret)</label>
+    <h3>認証アプリの動作</h3>
+    <label>base32 の秘密鍵（既定はよく使われるテスト用）</label>
     <input type="text" id="totp-secret" value="JBSWY3DPEHPK3PXP">
-    <button class="act" onclick="startTotp()">Start generating codes</button>
+    <button class="act" onclick="startTotp()">コード生成を開始</button>
     <div class="totp-display">
       <div class="totp-code" id="totp-code">— — —</div>
       <div class="totp-track"><div class="totp-fill" id="totp-bar" style="width:100%"></div></div>
@@ -254,19 +278,19 @@ python drills/run_all.py          # watch every protocol run green</div>
   </div>
 
   <div class="card demo">
-    <h3>Check against the RFC 6238 vector</h3>
-    <button class="act ghost" onclick="verifyRfcVector()">Verify the published test vector</button>
+    <h3>RFC 6238 の公式テストベクタと照合</h3>
+    <button class="act ghost" onclick="verifyRfcVector()">公開テストベクタで検証する</button>
     <div class="out" id="totp-vector"></div>
   </div>
 
   <div class="card">
-    <h3>Why passkeys beat TOTP</h3>
+    <h3>なぜパスキーが TOTP に勝るのか</h3>
     <table>
-      <tr><th>Factor</th><th>Phishable?</th><th>Secret at server?</th></tr>
-      <tr><td>Password</td><td class="bad">yes</td><td class="bad">yes (a hash)</td></tr>
-      <tr><td>TOTP</td><td class="bad">yes (real-time proxy relays the code)</td><td class="bad">yes (the shared secret)</td></tr>
-      <tr><td>Push</td><td class="warn">fatigue attacks</td><td>—</td></tr>
-      <tr><td>Passkey (WebAuthn)</td><td class="good">no — signature bound to origin</td><td class="good">no — only a public key</td></tr>
+      <tr><th>要素</th><th>フィッシング可能?</th><th>サーバに秘密が残る?</th></tr>
+      <tr><td>パスワード</td><td class="bad">可</td><td class="bad">可（ハッシュ）</td></tr>
+      <tr><td>TOTP</td><td class="bad">可（リアルタイム中継プロキシがコードを転送）</td><td class="bad">可（共有秘密）</td></tr>
+      <tr><td>プッシュ通知</td><td class="warn">可（プロンプト疲労攻撃）</td><td>—</td></tr>
+      <tr><td>パスキー (WebAuthn)</td><td class="good">不可 — 署名がオリジンに束縛</td><td class="good">不可 — 公開鍵のみ</td></tr>
     </table>
   </div>
 </section>
@@ -274,10 +298,10 @@ python drills/run_all.py          # watch every protocol run green</div>
 <!-- ================= OAuth ================= -->
 <section id="t-oauth" class="tab-panel">
   <h2>OAuth 2.0 + Security BCP &amp; OpenID Connect</h2>
-  <p class="lead">OAuth is <b>delegation</b> — letting an app act for you, scoped. OIDC adds <b>authentication</b> on top: the ID token tells the app who you are.</p>
+  <p class="lead">OAuth は<b>委譲</b>です — アプリに、範囲を限って自分の代理をさせる。OIDC はその上に<b>認証</b>を足します — ID トークンが「あなたが誰か」をアプリに伝えます。</p>
 
   <div class="card">
-    <h3>The grants, and which to use</h3>
+    <h3>グラントの種類と、どれを使うか</h3>
     <table>
       <tr><th>Grant</th><th>For</th><th>Verdict</th></tr>
       <tr><td>authorization_code + PKCE</td><td>web apps, SPAs, mobile</td><td class="good">the default for anything with a user</td></tr>
@@ -290,7 +314,7 @@ python drills/run_all.py          # watch every protocol run green</div>
   </div>
 
   <div class="card">
-    <h3>ID token vs access token — the confusion that breaks APIs</h3>
+    <h3>ID トークン vs アクセストークン — API を壊す典型的な混同</h3>
     <div class="grid2">
       <div class="out"><b>ID token</b> (OIDC)
 aud = the CLIENT
@@ -303,15 +327,15 @@ purpose: "may call this API"
 consumed by: the resource server
 typ: at+jwt</div>
     </div>
-    <div class="note">Sending an ID token to an API is a real, common bug. authlab's resource server rejects it on both <code>typ</code> and <code>aud</code>. Try it in the Attacks tab.</div>
+    <div class="note">ID トークンを API に送るのは実際によくあるバグです。authlab のリソースサーバは <code>typ</code> と <code>aud</code> の両方で拒否します。<a href="#" onclick="showTab('t-attacks',null);return false;">攻撃タブ</a>で試せます。<a href="02_jose_oauth_oidc/">OAuth・OIDC の解説を読む →</a></div>
   </div>
 
   <div class="card">
-    <h3>高度な OAuth / FAPI 2.0 <span class="pill impl">implemented</span></h3>
+    <h3>高度な OAuth / FAPI 2.0 <span class="pill impl">実装済み</span></h3>
     <p>PAR、JAR、JARM、RAR、CIBAを独立した状態機械として実装し、FAPI 2.0
       Security Profile（PAR・S256・confidential client・sender constraint）と
       Message Signing（JAR・JARM・RFC 9701 signed introspection）を分離した。
-      脅威と追加bindingは<a href="14_advanced_oauth_fapi.md">日本語解説</a>で追える。</p>
+      脅威と追加bindingは<a href="14_advanced_oauth_fapi/">日本語解説</a>で追える。</p>
     <div class="note">OAuth 2.1 は現在も Internet-Draft。FAPI 2.0 の2仕様は Final。</div>
   </div>
 </section>
@@ -319,56 +343,56 @@ typ: at+jwt</div>
 <!-- ================= PKCE ================= -->
 <section id="t-pkce" class="tab-panel">
   <h2>PKCE — Proof Key for Code Exchange</h2>
-  <p class="lead">PKCE binds the authorization code to whoever started the flow, so a stolen code is useless. This is the single most important OAuth hardening of the last decade.</p>
+  <p class="lead">PKCE は認可コードを「フローを開始した本人」に束縛します。だから盗まれたコードは無価値になります。この10年で最も重要な OAuth の強化策です。</p>
 
   <div class="card demo">
-    <h3>Generate a verifier / challenge pair</h3>
-    <p>The verifier stays secret on the client. Only its SHA-256 (the challenge) travels through the browser.</p>
-    <button class="act" onclick="generatePkce()">Generate (real SHA-256)</button>
-    <label>code_verifier (secret, kept by the client)</label>
+    <h3>verifier / challenge のペアを生成する</h3>
+    <p>verifier はクライアント側に秘密として留まります。ブラウザを通るのはその SHA-256（challenge）だけです。</p>
+    <button class="act" onclick="generatePkce()">生成する（本物の SHA-256）</button>
+    <label>code_verifier（秘密・クライアントが保持）</label>
     <div class="out" id="pkce-verifier"></div>
-    <label>code_challenge = base64url(SHA-256(verifier)) — sent on /authorize</label>
+    <label>code_challenge = base64url(SHA-256(verifier)) — /authorize に送られる</label>
     <div class="out" id="pkce-challenge"></div>
     <div class="note" id="pkce-note"></div>
   </div>
 
   <div class="card demo">
-    <h3>Verify a code_verifier against the challenge</h3>
-    <p>This is what the token endpoint does. Paste the verifier back (or change one character to see it fail).</p>
-    <label>code_verifier presented at the token endpoint</label>
-    <input type="text" id="pkce-check-verifier" placeholder="paste the verifier from above">
-    <button class="act" onclick="verifyPkce()">Check (re-hash &amp; compare)</button>
+    <h3>code_verifier を challenge と照合する</h3>
+    <p>トークンエンドポイントがやっていることです。上の verifier を貼り戻す（1文字変えると失敗するのが見えます）。</p>
+    <label>トークンエンドポイントに提示された code_verifier</label>
+    <input type="text" id="pkce-check-verifier" placeholder="上の verifier を貼り付け">
+    <button class="act" onclick="verifyPkce()">照合する（再ハッシュして比較）</button>
     <div class="out" id="pkce-verify-result"></div>
   </div>
 
   <div class="card">
-    <h3>Why <code>plain</code> is not PKCE</h3>
-    <p>The <code>plain</code> method sends the verifier itself through the browser — exactly the channel PKCE assumes is compromised. authlab refuses it and requires S256. And if the server accepted a request with <i>no</i> challenge, an attacker would simply omit it, so PKCE is <b>required</b> for public clients, not optional.</p>
+    <h3>なぜ <code>plain</code> は PKCE ではないのか</h3>
+    <p><code>plain</code> 方式は verifier そのものをブラウザ経由で送ります — PKCE が「侵害されている前提」に置いている、まさにその経路です。authlab はこれを拒否し S256 を必須にします。さらに、challenge が<i>無い</i>リクエストをサーバが受理するなら攻撃者は単に省略するだけなので、public client では PKCE は任意ではなく<b>必須</b>です。</p>
   </div>
 </section>
 
 <!-- ================= PASSWORDS ================= -->
 <section id="t-passwords" class="tab-panel">
-  <h2>Password storage</h2>
-  <p class="lead">Never store the password. Salt per user. Be slow on purpose. Store the parameters so you can raise the cost later.</p>
+  <h2>パスワードの保存</h2>
+  <p class="lead">パスワードそのものは保存しない。ユーザごとに salt を振る。意図的に遅くする。後からコストを上げられるようパラメータも一緒に保存する。</p>
 
   <div class="card demo">
-    <h3>Hash a password (PBKDF2, real)</h3>
+    <h3>パスワードをハッシュする（PBKDF2・本物）</h3>
     <div class="grid2">
-      <div><label>password</label><input type="text" id="pw-input" value="correct horse battery staple"></div>
-      <div><label>iterations</label><input type="number" id="pw-iter" value="100000"></div>
+      <div><label>パスワード</label><input type="text" id="pw-input" value="correct horse battery staple"></div>
+      <div><label>反復回数</label><input type="number" id="pw-iter" value="100000"></div>
     </div>
-    <button class="act" onclick="hashPassword()">Hash &amp; time it</button>
+    <button class="act" onclick="hashPassword()">ハッシュして所要時間を測る</button>
     <div class="out" id="pw-output"></div>
-    <div class="note">The Python library defaults to scrypt (memory-hard); this browser demo uses PBKDF2 because that is what Web Crypto exposes. Same principle: deliberate slowness.</div>
+    <div class="note">Python 実装の既定は scrypt（メモリハード）。このブラウザデモが PBKDF2 なのは Web Crypto が公開しているのがそれだからです。原理は同じ — 意図的な遅さ。</div>
   </div>
 
   <div class="card demo">
-    <h3>The user-enumeration timing oracle</h3>
-    <p>A naive login returns instantly for an unknown user but slowly for a known one. That gap tells an attacker which usernames exist.</p>
-    <button class="act" onclick="demoTiming()">Measure naive vs defended</button>
+    <h3>ユーザ列挙を許すタイミングオラクル</h3>
+    <p>素朴なログインは、存在しないユーザには即座に、存在するユーザには遅く返します。この差が「どのユーザ名が存在するか」を攻撃者に教えてしまいます。</p>
+    <button class="act" onclick="demoTiming()">素朴な実装と防御済みを計測する</button>
     <div class="out" id="pw-timing"></div>
-    <div class="note">The fix (<code>fake_verify</code> in <code>authlab/passwords/hasher.py</code>) burns the same time for a missing user as for a wrong password.</div>
+    <div class="note">対策（<code>authlab/passwords/hasher.py</code> の <code>fake_verify</code>）は、存在しないユーザに対してもパスワード誤りと同じ時間を消費します。</div>
   </div>
 </section>
 
@@ -428,14 +452,14 @@ document:budget#owner@user:erin</div>
   <div class="card">
     <h3>RBACだけでは「自分の」を言えない</h3>
     <p><code>orders:read</code>は「注文を読める」であり、<em>誰の注文か</em>を表しません。「自分の」が要件に出たらABAC/ReBAC等のobject境界が必要です。ここをscopeだけで済ませると<b>BOLA/IDOR</b>になります。</p>
-    <p><a href="08_authz.md">性能・整合性、cycle/depth、decision log privacyを含む詳細解説</a></p>
+    <p><a href="08_authz/">性能・整合性、cycle/depth、decision log privacyを含む詳細解説</a></p>
   </div>
 </section>
 
 <!-- ================= DIAGRAMS ================= -->
 <section id="t-diagrams" class="tab-panel">
   <h2>プロトコル・フロー図</h2>
-  <p class="lead">主要プロトコルのシーケンス図。全16図は <a href="diagrams.md">docs/diagrams.md</a>（GitHub 上でレンダリング）。この場でも描画されます。</p>
+  <p class="lead">主要プロトコルのシーケンス図。<a href="diagrams/">図集ページ</a>に全16図（日本語解説つき）。この場でも描画されます。</p>
 
   <div class="card">
     <h3>OAuth 2.0 + Security BCP 認可コード + PKCE</h3>
@@ -542,7 +566,7 @@ document:budget#owner@user:erin</div>
     S8 -.-> BOLA["scope だけでは不十分<br/>BOLA / IDOR (OWASP API #1)"]</pre>
   </div>
 
-  <div class="note" id="mermaid-status">図をレンダリング中… 表示されない場合は <a href="diagrams.md">docs/diagrams.md</a> をご覧ください（GitHub 上で確実に描画されます）。</div>
+  <div class="note" id="mermaid-status">図をレンダリング中… 表示されない場合は<a href="diagrams/">図集ページ</a>をご覧ください。</div>
 </section>
 
 <!-- ================= NATIVE WEBAUTHN ================= -->
@@ -637,98 +661,98 @@ document:budget#owner@user:erin</div>
 <!-- ================= PROTOCOLS ================= -->
 <section id="t-protocols" class="tab-panel">
   <h2>SAML · Kerberos · WebAuthn · mTLS · LDAP · SCIM · DPoP</h2>
-  <p class="lead">All implemented from scratch in the Python library. Below is the mental model for each; the code and drills go deeper. <span class="pill impl">implemented</span></p>
+  <p class="lead">いずれも Python 実装でゼロから作ってあります。以下は各プロトコルの「頭の中の地図」で、コードとドリルがその先を扱います。<span class="pill impl">実装済み</span></p>
 
   <div class="card">
-    <h3>SAML 2.0 <span class="pill impl">implemented</span></h3>
-    <p>Enterprise SSO's XML predecessor to OIDC. Same shape: SP↔client, IdP↔OP, Assertion↔ID token, Audience↔aud. The hard part is XML-DSig, because you sign a <i>tree</i>, not a byte string — which is where <b>XML Signature Wrapping</b> lives. authlab implements W3C Exclusive XML Canonicalization, including visible namespaces and <code>InclusiveNamespaces PrefixList</code>. Its verifier returns the element that was signed, so a caller cannot be tricked into reading an unsigned sibling.</p>
-    <div class="note">Source: <code>authlab/saml/</code> · Drill 09 lands a real XSW attack and shows it refused · optional <code>xmlsec1</code> interoperability check.</div>
+    <h3>SAML 2.0 <span class="pill impl">実装済み</span></h3>
+    <p>OIDC の XML 版にあたる、企業 SSO の先行プロトコル。構造は同じで、SP↔クライアント、IdP↔OP、Assertion↔ID トークン、Audience↔aud と対応します。難所は XML-DSig で、署名対象がバイト列ではなく<i>木構造</i>であること — ここに <b>XML 署名ラッピング (XSW)</b> が潜みます。authlab は W3C 排他的正規化（可視名前空間と <code>InclusiveNamespaces PrefixList</code> を含む）を実装し、検証器は<b>署名された要素そのもの</b>を返すので、署名のない兄弟要素を読まされることがありません。</p>
+    <div class="note">実装: <code>authlab/saml/</code> · ドリル09 は本物の XSW 攻撃を仕掛けて拒否される様子を見せます · 任意で <code>xmlsec1</code> との相互運用チェックあり。<a href="03_saml/">SAML の解説を読む →</a></div>
   </div>
 
   <div class="card">
-    <h3>Kerberos <span class="pill impl">implemented</span></h3>
-    <p>The symmetric-key protocol behind every Active Directory. A KDC issues a TGT (encrypted to <code>krbtgt</code>) and service tickets (encrypted to each service). The service verifies a ticket without ever calling the KDC — that is why it scales. The lab includes working <b>Kerberoasting</b>, <b>AS-REP roasting</b>, <b>golden tickets</b>, and <b>pass-the-ticket</b>, so the AD attack family is concrete.</p>
-    <div class="note">Source: <code>authlab/kerberos/</code> · Drill 10.</div>
+    <h3>Kerberos <span class="pill impl">実装済み</span></h3>
+    <p>あらゆる Active Directory の土台にある共通鍵プロトコル。KDC が TGT（<code>krbtgt</code> 鍵で暗号化）とサービスチケット（各サービスの鍵で暗号化）を発行します。サービスは KDC に問い合わせずにチケットを検証できる — これがスケールする理由です。<b>Kerberoasting</b>、<b>AS-REP roasting</b>、<b>ゴールデンチケット</b>、<b>pass-the-ticket</b> が動く形で入っているので、AD 攻撃の系統が具体物として掴めます。</p>
+    <div class="note">実装: <code>authlab/kerberos/</code> · ドリル10。<a href="04_kerberos/">Kerberos の解説を読む →</a></div>
   </div>
 
   <div class="card">
-    <h3>WebAuthn / passkeys <span class="pill impl">implemented</span></h3>
-    <p>A key pair per site; the private key never leaves the authenticator, and the signature is bound to the origin. That origin binding is the phishing resistance: a look-alike domain gets no signature because there is no key for it. The lab has a virtual authenticator, a full Python relying party, and a browser-native ceremony that verifies COSE keys, RP ID hash, flags, counters, and assertion signatures.</p>
-    <div class="note">Source: <code>authlab/webauthn/</code> · Drill 11 · <a href="#" onclick="showTab('t-webauthn-native',null);return false;">ブラウザ標準 WebAuthn を開く</a>.</div>
+    <h3>WebAuthn / passkeys <span class="pill impl">実装済み</span></h3>
+    <p>サイトごとに鍵ペアを作り、秘密鍵は認証器から出ず、署名はオリジンに束縛されます。このオリジン束縛がフィッシング耐性の本体です — 似せたドメインには対応する鍵が存在しないので、署名がそもそも返りません。仮想認証器、Python の完全なリライングパーティ、そして COSE 鍵・RP ID ハッシュ・フラグ・カウンタ・アサーション署名を検証するブラウザ標準の実演が入っています。</p>
+    <div class="note">実装: <code>authlab/webauthn/</code> · ドリル11 · <a href="#" onclick="showTab('t-webauthn-native',null);return false;">ブラウザ標準 WebAuthn を開く</a> · <a href="05_webauthn/">WebAuthn の解説を読む →</a></div>
   </div>
 
   <div class="card">
-    <h3>mTLS <span class="pill impl">implemented (real TLS handshake)</span></h3>
-    <p>Client authentication moved into the TLS handshake itself. This is the one protocol the lab runs over a <b>real socket</b>: a CA we mint issues certs that Python's <code>ssl</code> module genuinely verifies. It also wires into OAuth via RFC 8705 — a token bound to the client certificate (<code>cnf.x5t#S256</code>) is useless without it.</p>
-    <div class="note">Source: <code>authlab/mtls/</code>, <code>authlab/crypto/x509.py</code> · Drill 12.</div>
+    <h3>mTLS <span class="pill impl">実装済み（本物の TLS ハンドシェイク）</span></h3>
+    <p>クライアント認証を TLS ハンドシェイクの内側に移したもの。このラボで唯一<b>実ソケット</b>上で動くプロトコルです — 自前で発行した CA の証明書を、Python の <code>ssl</code> モジュールが本当に検証します。RFC 8705 で OAuth とも接続していて、クライアント証明書に束縛されたトークン（<code>cnf.x5t#S256</code>）は証明書なしでは無価値になります。</p>
+    <div class="note">実装: <code>authlab/mtls/</code>, <code>authlab/crypto/x509.py</code> · ドリル12。<a href="06_mtls_dpop/">mTLS と DPoP の解説を読む →</a></div>
   </div>
 
   <div class="card">
-    <h3>DPoP <span class="pill impl">implemented</span></h3>
-    <p>The software answer to bearer-token theft (RFC 9449). The client holds a key and signs a proof for every request; the token carries the key's thumbprint in <code>cnf.jkt</code>. A stolen token is useless without the private key. Note the deliberate contrast with JWS: here the inline <code>jwk</code> is <i>correct</i>, because it is checked against a thumbprint from a token the AS signed.</p>
-    <div class="note">Source: <code>authlab/oauth/dpop.py</code> · Drill 07.</div>
+    <h3>DPoP <span class="pill impl">実装済み</span></h3>
+    <p>Bearer トークン窃取に対するソフトウェア側の答え (RFC 9449)。クライアントが鍵を持ち、リクエストごとに proof を署名します。トークンは鍵の thumbprint を <code>cnf.jkt</code> に持ちます。盗まれたトークンは秘密鍵なしでは無価値です。JWS との<b>意図的な対比</b>に注目してください — ここでは inline の <code>jwk</code> は<i>正しい</i>のです。AS が署名したトークン側の thumbprint と照合されるからです。</p>
+    <div class="note">実装: <code>authlab/oauth/dpop.py</code> · ドリル07。<a href="06_mtls_dpop/">mTLS と DPoP の解説を読む →</a></div>
   </div>
 
   <div class="card">
-    <h3>LDAP <span class="pill impl">implemented</span></h3>
-    <p>The directory behind corporate login. Two traps: <b>LDAP injection</b> (build a filter from user input and <code>*)(uid=*</code> matches everyone) and the <b>anonymous-bind trap</b> (a bind with an empty password succeeds as anonymous, so blank-password logins let anyone in). authlab does search-then-bind with a real filter parser and refuses empty passwords.</p>
-    <div class="note">Source: <code>authlab/directory/ldap.py</code> · Drill 13.</div>
+    <h3>LDAP <span class="pill impl">実装済み</span></h3>
+    <p>企業ログインの背後にあるディレクトリ。罠は2つ。<b>LDAP インジェクション</b>（ユーザ入力からフィルタを組み立てると <code>*)(uid=*</code> が全員に一致する）と、<b>匿名バインドの罠</b>（空パスワードのバインドは「匿名として成功」するので、空パスワードログインが誰でも通ってしまう）。authlab は本物のフィルタパーサで search-then-bind を行い、空パスワードを拒否します。</p>
+    <div class="note">実装: <code>authlab/directory/ldap.py</code> · ドリル13。<a href="07_ldap_scim/">LDAP と SCIM の解説を読む →</a></div>
   </div>
 
   <div class="card">
-    <h3>SCIM 2.0 <span class="pill impl">implemented</span></h3>
-    <p>How identities get provisioned and — crucially — <b>deprovisioned</b> across SaaS apps. The lesson: deactivation (<code>active:false</code> via PATCH), not deletion, is the event that matters, and your app must consult <code>active</code> on every request or ex-employees keep their access until their token expires.</p>
-    <div class="note">Source: <code>authlab/directory/scim.py</code> · Drill 13.</div>
+    <h3>SCIM 2.0 <span class="pill impl">実装済み</span></h3>
+    <p>SaaS 群にまたがってアカウントが作られ、そして——ここが肝心——<b>止められる</b>仕組み。教訓は、重要なイベントは削除ではなく<b>無効化</b>（PATCH による <code>active:false</code>）であること。そしてアプリ側がリクエストごとに <code>active</code> を確認しないと、退職者はトークンが期限切れになるまでアクセスを保持し続けます。</p>
+    <div class="note">実装: <code>authlab/directory/scim.py</code> · ドリル13。<a href="07_ldap_scim/">LDAP と SCIM の解説を読む →</a></div>
   </div>
 </section>
 
 <!-- ================= ATTACKS ================= -->
 <section id="t-attacks" class="tab-panel">
-  <h2>Attacks</h2>
-  <p class="lead">Every attack this lab resists, shown breaking a naive implementation and then refused. Two are interactive here; the rest run in <code>attacks/catalog.py</code>.</p>
+  <h2>攻撃</h2>
+  <p class="lead">このラボが防ぐ攻撃の一覧。素朴な実装が破られる様子を見せてから、authlab が拒否する様子を見せます。ここで触れるのは2つ、残りは <code>attacks/catalog.py</code> で実行できます。</p>
 
   <div class="card demo">
-    <h3><code>redirect_uri</code>: exact match vs startsWith</h3>
-    <p>Registered: <code>https://app.example.com/callback</code>. Try an attacker's variation.</p>
-    <label>candidate redirect_uri</label>
+    <h3><code>redirect_uri</code>: 完全一致 vs 前方一致</h3>
+    <p>登録済み: <code>https://app.example.com/callback</code>。攻撃者が使う変種を試してください。</p>
+    <label>検査する redirect_uri</label>
     <input type="text" id="redir-input" value="https://app.example.com/callback.attacker.net">
-    <button class="act" onclick="checkRedirect()">Compare both matching strategies</button>
+    <button class="act" onclick="checkRedirect()">2つの照合方式を比較する</button>
     <div class="out" id="redir-result"></div>
   </div>
 
   <div class="card">
-    <h3>The full catalog</h3>
+    <h3>攻撃カタログ全体</h3>
     <table>
-      <tr><th>#</th><th>Attack</th><th>Defended by</th></tr>
-      <tr><td>1</td><td>alg=none</td><td>required algorithm allow-list</td></tr>
-      <tr><td>2</td><td>RS256→HS256 confusion</td><td>typed keys + allow-list</td></tr>
-      <tr><td>3</td><td>JWT jwk header injection</td><td>forbidden key-nominating headers</td></tr>
-      <tr><td>4</td><td>Missing state → login CSRF</td><td>state required, bound to session</td></tr>
-      <tr><td>5</td><td>redirect_uri prefix matching</td><td>exact match only</td></tr>
-      <tr><td>6</td><td>Authorization code replay</td><td>single-use + family revoke</td></tr>
-      <tr><td>7</td><td>PKCE downgrade / omission</td><td>PKCE required for public clients</td></tr>
-      <tr><td>8</td><td>Refresh token replay</td><td>rotation + reuse detection</td></tr>
-      <tr><td>9</td><td>ID token used as access token</td><td>typ + aud checks</td></tr>
-      <tr><td>10</td><td>BOLA / IDOR</td><td>ownership check ≠ scope check</td></tr>
-      <tr><td>11</td><td>Bearer token replay</td><td>DPoP / mTLS sender constraint</td></tr>
-      <tr><td>12</td><td>LDAP injection</td><td>escaping + real parser</td></tr>
-      <tr><td>13</td><td>LDAP anonymous bind</td><td>empty-password rejection</td></tr>
-      <tr><td>14</td><td>User enumeration by timing</td><td>constant-time fake_verify</td></tr>
-      <tr><td>15</td><td>XML signature wrapping</td><td>return-the-signed-element</td></tr>
-      <tr><td>16-19</td><td>Kerberoasting, AS-REP roasting, golden ticket, pass-the-ticket</td><td>strong service passwords, preauth, krbtgt hygiene, short tickets</td></tr>
-      <tr><td>25-31</td><td>PAR/JAR/JARM/RAR/CIBA/FAPI parameter, replay, and type confusion</td><td>authenticated request references, signatures, structured grants, sender constraints</td></tr>
+      <tr><th>#</th><th>攻撃</th><th>防御手段</th></tr>
+      <tr><td>1</td><td>alg=none</td><td>許可アルゴリズム一覧の必須化</td></tr>
+      <tr><td>2</td><td>RS256→HS256 のアルゴリズム混同</td><td>型付き鍵 + 許可一覧</td></tr>
+      <tr><td>3</td><td>JWT の jwk ヘッダ注入</td><td>鍵を指名するヘッダの禁止</td></tr>
+      <tr><td>4</td><td>state 欠落 → ログイン CSRF</td><td>state 必須・セッションに束縛</td></tr>
+      <tr><td>5</td><td>redirect_uri の前方一致</td><td>完全一致のみ</td></tr>
+      <tr><td>6</td><td>認可コードの再利用</td><td>単回使用 + family 単位の失効</td></tr>
+      <tr><td>7</td><td>PKCE のダウングレード / 省略</td><td>public client では PKCE 必須</td></tr>
+      <tr><td>8</td><td>リフレッシュトークンの再利用</td><td>ローテーション + 再利用検知</td></tr>
+      <tr><td>9</td><td>ID トークンをアクセストークンとして使用</td><td>typ と aud の検証</td></tr>
+      <tr><td>10</td><td>BOLA / IDOR</td><td>所有権の検証（scope 検証とは別物）</td></tr>
+      <tr><td>11</td><td>Bearer トークンの窃取・再利用</td><td>DPoP / mTLS による送信者制約</td></tr>
+      <tr><td>12</td><td>LDAP インジェクション</td><td>エスケープ + 本物のパーサ</td></tr>
+      <tr><td>13</td><td>LDAP 匿名バインド</td><td>空パスワードの拒否</td></tr>
+      <tr><td>14</td><td>タイミングによるユーザ列挙</td><td>定数時間の fake_verify</td></tr>
+      <tr><td>15</td><td>XML 署名ラッピング (XSW)</td><td>「署名された要素を返す」API</td></tr>
+      <tr><td>16-19</td><td>Kerberoasting / AS-REP roasting / ゴールデンチケット / pass-the-ticket</td><td>強固なサービスパスワード・事前認証・krbtgt の衛生管理・短いチケット</td></tr>
+      <tr><td>25-31</td><td>PAR/JAR/JARM/RAR/CIBA/FAPI のパラメータ・リプレイ・型混同</td><td>認証済みリクエスト参照・署名・構造化グラント・送信者制約</td></tr>
     </table>
-    <div class="note">Full CWE / OWASP mapping: <code>docs/09_attack_matrix.md</code>.</div>
+    <div class="note">CWE / OWASP の完全な対応表は<a href="09_attack_matrix/">攻撃対応表ページ</a>にあります。</div>
   </div>
 </section>
 
 <!-- ================= REFS ================= -->
 <section id="t-refs" class="tab-panel">
-  <h2>References &amp; study plan</h2>
-  <p class="lead">The specs, the best learning sites, the 14-day plan, and the Spring Security mapping.</p>
+  <h2>参考資料と学習計画</h2>
+  <p class="lead">仕様書、学習に使える良質なサイト、14日学習計画、そして Spring Security との対応表。</p>
 
   <div class="card">
-    <h3>Primary specifications</h3>
+    <h3>一次仕様（RFC / 標準）</h3>
     <ul class="tight">
       <li>OAuth 2.0 — <a href="https://datatracker.ietf.org/doc/html/rfc6749">RFC 6749</a>, threat model <a href="https://datatracker.ietf.org/doc/html/rfc6819">RFC 6819</a></li>
       <li>OAuth 2.1 draft — <a href="https://datatracker.ietf.org/doc/html/draft-ietf-oauth-v2-1">draft-ietf-oauth-v2-1</a>, Security BCP <a href="https://datatracker.ietf.org/doc/html/rfc9700">RFC 9700</a></li>
@@ -749,7 +773,7 @@ document:budget#owner@user:erin</div>
   </div>
 
   <div class="card">
-    <h3>Best learning sites</h3>
+    <h3>学習に使える良質なサイト</h3>
     <ul class="tight">
       <li><a href="https://oauth.net/2/">oauth.net</a> — Aaron Parecki's canonical hub for OAuth 2.x</li>
       <li><a href="https://www.oauth.com/">oauth.com</a> — free book, "OAuth 2.0 Simplified"</li>
@@ -766,13 +790,13 @@ document:budget#owner@user:erin</div>
   </div>
 
   <div class="card">
-    <h3>14-day plan &amp; Spring Security mapping</h3>
-    <p>The full day-by-day study schedule, the mapping from every authlab concept to its Spring Security class, and an English interview script live in the repo docs:</p>
+    <h3>14日学習計画と Spring Security 対応表</h3>
+    <p>日ごとの詳細な学習スケジュール、authlab の各概念から Spring Security のクラスへの対応表、面接用の英語スクリプトは、それぞれ次のページにあります:</p>
     <ul class="tight">
-      <li><a href="10_spring_security_map.md">docs/10_spring_security_map.md</a> — authlab ↔ Spring Security</li>
-      <li><a href="11_14day_plan.md">docs/11_14day_plan.md</a> — the 14-day drill schedule</li>
-      <li><a href="12_interview_english.md">docs/12_interview_english.md</a> — English talking points for interviews</li>
-      <li><a href="09_attack_matrix.md">docs/09_attack_matrix.md</a> — attacks ↔ CWE ↔ OWASP</li>
+      <li><a href="10_spring_security_map/">docs/10_spring_security_map.md</a> — authlab ↔ Spring Security</li>
+      <li><a href="11_14day_plan/">docs/11_14day_plan.md</a> — the 14-day drill schedule</li>
+      <li><a href="12_interview_english/">docs/12_interview_english.md</a> — English talking points for interviews</li>
+      <li><a href="09_attack_matrix/">docs/09_attack_matrix.md</a> — attacks ↔ CWE ↔ OWASP</li>
     </ul>
   </div>
 </section>
@@ -793,17 +817,17 @@ document:budget#owner@user:erin</div>
 <script type="module">
   // Mermaid renders the Diagrams tab. Loaded from a CDN (GitHub Pages allows
   // external scripts); if it cannot load (offline / file://), the fallback
-  // note stays and points to docs/diagrams.md, which GitHub renders natively.
+  // note stays and points to the diagrams page, which MkDocs renders natively.
   try {
     const theme = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "default";
     const mod = await import("https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs");
     mod.default.initialize({ startOnLoad: true, theme, securityLevel: "strict" });
     await mod.default.run();
     const status = document.getElementById("mermaid-status");
-    if (status) status.textContent = "全16図は docs/diagrams.md にあります。";
+    if (status) status.textContent = "全16図は図集ページにあります。";
   } catch (e) {
     const status = document.getElementById("mermaid-status");
-    if (status) status.innerHTML = 'この環境では図ライブラリを読み込めませんでした。<a href="diagrams.md">docs/diagrams.md</a> を GitHub 上でご覧ください（確実に描画されます）。';
+    if (status) status.innerHTML = 'この環境では図ライブラリを読み込めませんでした。<a href="diagrams/">図集ページ</a>をご覧ください（そちらは確実に描画されます）。';
   }
 </script>
 </body>

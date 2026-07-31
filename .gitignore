@@ -9,3 +9,4 @@ site-desktop.png
 site-mobile.png
 .tmp/
 docs/assets/authlab-pyodide.zip
+_site/
