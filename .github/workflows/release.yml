@@ -10,8 +10,8 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Existing tag to release (e.g. v1.0.2)"
-        required: true
+        description: "Tag to release, created at the chosen ref if absent. Defaults to v<authlab.__version__>."
+        required: false
         type: string
 
 permissions:
@@ -24,7 +24,9 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: ${{ inputs.tag || github.ref }}
+          # On a tag push, check out the tag. On a manual run, check out the
+          # branch it was dispatched from and tag that commit below.
+          ref: ${{ github.ref }}
           fetch-depth: 0
 
       - uses: actions/setup-python@v6
@@ -34,15 +36,31 @@ jobs:
       - name: Verify tests, drills, attack regressions, and fuzz campaign
         run: python scripts/verify.py
 
-      - name: Check the tag matches authlab.__version__
+      - name: Resolve the tag and check it matches authlab.__version__
+        id: tag
         run: |
-          tag="${{ inputs.tag || github.ref_name }}"
           version="v$(python -c 'import authlab; print(authlab.__version__)')"
+          tag="${{ inputs.tag }}"
+          tag="${tag:-${{ github.event_name == 'push' && github.ref_name || '' }}}"
+          tag="${tag:-$version}"
           if [ "$tag" != "$version" ]; then
             echo "::error::tag $tag does not match authlab.__version__ ($version)"
             exit 1
           fi
-          echo "$tag matches authlab.__version__"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "releasing $tag"
+
+      - name: Create the tag if it does not exist yet
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>&1; then
+            echo "$TAG already exists on the remote"
+          else
+            git tag -a "$TAG" -m "auth-lab $TAG"
+            git push origin "refs/tags/$TAG"
+          fi
 
       - name: Build the learning bundle
         run: python scripts/build_zip.py
@@ -50,7 +68,7 @@ jobs:
       - name: Publish the release
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ inputs.tag || github.ref_name }}
+          TAG: ${{ steps.tag.outputs.tag }}
         run: |
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release upload "$TAG" dist/auth-lab-learning-bundle.zip \
