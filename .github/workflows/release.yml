@@ -1,0 +1,63 @@
+name: Release
+
+# Pushing a v* tag cuts the release: verify everything first, then publish the
+# GitHub Release with the learning bundle attached. Verification runs again
+# here on purpose -- a tag can be pushed at a commit CI never saw.
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to release (e.g. v1.0.2)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Verify tests, drills, attack regressions, and fuzz campaign
+        run: python scripts/verify.py
+
+      - name: Check the tag matches authlab.__version__
+        run: |
+          tag="${{ inputs.tag || github.ref_name }}"
+          version="v$(python -c 'import authlab; print(authlab.__version__)')"
+          if [ "$tag" != "$version" ]; then
+            echo "::error::tag $tag does not match authlab.__version__ ($version)"
+            exit 1
+          fi
+          echo "$tag matches authlab.__version__"
+
+      - name: Build the learning bundle
+        run: python scripts/build_zip.py
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$TAG" dist/auth-lab-learning-bundle.zip \
+              --repo "$GITHUB_REPOSITORY" --clobber
+          else
+            gh release create "$TAG" dist/auth-lab-learning-bundle.zip \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "auth-lab $TAG" \
+              --generate-notes
+          fi
