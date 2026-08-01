@@ -1,0 +1,91 @@
+name: Branch cleanup
+
+# Merged branches were piling up: seven of them survived their merged pull
+# requests. GitHub can do this natively with "Automatically delete head
+# branches" in repository settings, but that is a setting rather than something
+# the repository can carry, so this workflow does the same job in-tree and also
+# sweeps whatever has already accumulated.
+#
+# Safety: a branch is only ever deleted when GitHub reports a MERGED pull
+# request for it and no open one. The default branch is excluded outright.
+
+on:
+  pull_request:
+    types: [closed]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "List what would be deleted without deleting it"
+        required: false
+        default: true
+        type: boolean
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  delete-merged-head:
+    # Only for the branch of the pull request that just merged, and never for
+    # a fork's branch (which this repository cannot write to anyway).
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Delete the merged head branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ github.event.pull_request.head.ref }}
+        run: |
+          if [ "$BRANCH" = "${{ github.event.repository.default_branch }}" ]; then
+            echo "refusing to delete the default branch"
+            exit 0
+          fi
+          gh api -X DELETE "repos/$GITHUB_REPOSITORY/git/refs/heads/$BRANCH" \
+            && echo "deleted $BRANCH" \
+            || echo "$BRANCH was already gone"
+
+  sweep:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Delete branches whose pull requests have merged
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          set -euo pipefail
+          default=$(gh api "repos/$GITHUB_REPOSITORY" --jq .default_branch)
+          echo "default branch: $default (never touched)"
+
+          # Branches with an open pull request must survive regardless.
+          gh api --paginate "repos/$GITHUB_REPOSITORY/pulls?state=open&per_page=100" \
+            --jq '.[].head.ref' | sort -u > /tmp/open-heads.txt || true
+
+          gh api --paginate "repos/$GITHUB_REPOSITORY/branches?per_page=100" \
+            --jq '.[].name' | while read -r branch; do
+            [ "$branch" = "$default" ] && continue
+            if grep -qxF "$branch" /tmp/open-heads.txt 2>/dev/null; then
+              echo "keep    $branch (open pull request)"
+              continue
+            fi
+            # Ask GitHub whether any pull request from this branch merged.
+            merged=$(gh api \
+              "repos/$GITHUB_REPOSITORY/pulls?state=closed&head=${GITHUB_REPOSITORY%%/*}:$branch&per_page=100" \
+              --jq '[.[] | select(.merged_at != null)] | length')
+            if [ "${merged:-0}" -eq 0 ]; then
+              echo "keep    $branch (no merged pull request; may hold unmerged work)"
+              continue
+            fi
+            if [ "$DRY_RUN" = "true" ]; then
+              echo "would delete $branch ($merged merged pull request(s))"
+            else
+              gh api -X DELETE "repos/$GITHUB_REPOSITORY/git/refs/heads/$branch" \
+                && echo "deleted $branch" \
+                || echo "failed to delete $branch"
+            fi
+          done
