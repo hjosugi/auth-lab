@@ -6,6 +6,6 @@
 実演:
 
 ```bash
-PYTHONPATH=. python attacks/catalog.py       # 素朴実装が破れる → authlab が防ぐ
+python attacks/catalog.py       # 素朴実装が破れる → authlab が防ぐ
 python attacks/run_regressions.py            # 全防御をアサーションで回帰チェック
 ```
