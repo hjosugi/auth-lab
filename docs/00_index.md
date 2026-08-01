@@ -73,7 +73,7 @@ interop/          local-only実製品fixture（Keycloak / OpenLDAP / MIT Kerbero
 # 依存なし。Python 3.11+ 標準ライブラリのみ
 python drills/run_all.py                    # 全プロトコルが緑になるのを見る
 python -m unittest discover -s tests        # 全unittest
-PYTHONPATH=. python attacks/catalog.py      # 攻撃カタログ
+python attacks/catalog.py                   # 攻撃カタログ
 python -m authlab.server                    # OAuth/OIDC サーバを起動 (:8080)
 ```
 

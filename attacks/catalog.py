@@ -3,6 +3,8 @@
 Each function demonstrates one attack twice -- succeeding against a deliberately
 naive implementation, then failing against authlab -- so the specific check
 that matters is visible, not hand-waved.
+
+    python attacks/catalog.py
 """
 
 from __future__ import annotations
@@ -11,8 +13,15 @@ import base64
 import hashlib
 import hmac
 import json
+import os
 import sys
 import time
+
+# Running a script inside attacks/ puts attacks/ on sys.path, not the
+# repository root, so authlab would only import when something upstream had
+# already set PYTHONPATH. run_regressions.py next door does the same thing.
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from urllib.parse import parse_qsl, urlsplit
 
 from authlab.authz import CANONICAL_CASES, PolicyComparison, canonical_dataset

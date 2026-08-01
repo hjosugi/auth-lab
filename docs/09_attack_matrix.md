@@ -48,7 +48,7 @@
 ## 使い方
 
 ```bash
-PYTHONPATH=. python attacks/catalog.py    # 1〜11, 14 を実演
+python attacks/catalog.py    # 1〜11, 14 を実演
 python drills/09_saml.py                   # 15 (XSW) を実演
 python drills/10_kerberos.py               # 16〜19 を実演
 python drills/13_ldap_scim.py              # 12, 13 を実演
@@ -59,7 +59,7 @@ python drills/14_advanced_oauth.py          # 25〜31 のbindingを実演
 python -m unittest tests.test_oauth_advanced # 25〜31 の正常系・negative test
 python drills/08_authz_models.py            # 32〜35 の5モデル比較
 python -m unittest tests.test_policy_comparison # 32〜35 のparity/negative test
-PYTHONPATH=. python attacks/run_regressions.py  # 32, 33 を含む拒否回帰
+python attacks/run_regressions.py  # 32, 33 を含む拒否回帰
 python scripts/run_property_fuzz.py             # 6〜9, 15, 36 の順序・parser生成回帰
 ```
 
