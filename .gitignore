@@ -10,3 +10,9 @@ site-mobile.png
 .tmp/
 docs/assets/authlab-pyodide.zip
 _site/
+.claude/skills/graphify/
+.claude/settings.local.json
+.copilot/skills/graphify/
+.codex/skills/graphify/
+.codex/hooks.json
+graphify-out/
